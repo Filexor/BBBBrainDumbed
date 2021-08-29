@@ -105,6 +105,15 @@ public:
 		}
 	}
 
+	uint16_t read16(uint16_t address) {
+		uint16_t out = 0;
+		for (size_t i = 0; i < 16; i++)
+		{
+			out |= read(address + i) << i;
+		}
+		return out;
+	}
+
 	void write(uint16_t address, bool value) {
 		uint16_t i = MapAddress(address);
 		if (i <= 0x7fff)
@@ -146,6 +155,13 @@ public:
 		else
 		{
 			return;
+		}
+	}
+
+	void write(uint16_t address, vector<bool> value) {
+		for (size_t i = 0; i < value.size(); i++)
+		{
+			write(address, value[i]);
 		}
 	}
 };
