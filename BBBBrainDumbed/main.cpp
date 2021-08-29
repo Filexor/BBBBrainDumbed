@@ -161,7 +161,14 @@ public:
 	void write(uint16_t address, vector<bool> value) {
 		for (size_t i = 0; i < value.size(); i++)
 		{
-			write(address, value[i]);
+			write(address + i, value[i]);
+		}
+	}
+
+	void write(uint16_t address, uint16_t value) {
+		for (size_t i = 0; i < 16; i++)
+		{
+			write(address + i, (bool)((value >> i) & 1));
 		}
 	}
 };
@@ -1537,7 +1544,9 @@ mtp
 	b.X = 60000;
 	b.Y = 10000;
 	b.C = 1;
-	b.Execute(0x100);
+	b.A = 0x8000;
+	b.memory.write(0x8000, (uint16_t)52149);
+	b.Execute(0x10000);
 	wcout << L"Z=" << b.Z << L" X=" << b.X << L" Y=" << b.Y << L" C=" << b.C << endl;
 	return 0;
 }
