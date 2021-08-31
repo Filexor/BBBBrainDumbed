@@ -11,21 +11,16 @@ using namespace std;
 class Memory {
 public:
 
-	vector<bool> ROM;	//0x0000-0x7fff
-	vector<bool> RAM;	//0x8000-0xbfff
-	vector<bool> VRAM;	//0xc000-0xc016 0xc017-0xc01f:reserved 0xc020-0xdfff:mirror 
-	vector<bool> ARAM;	//0xe000-0xe004 0xe005-0xe007:reserved 0xe008-0xefff:mirror
-	vector<bool> ControllerInput0;	//0xf000-0xf004 0xf005-0xf007:reserved
-	vector<bool> ControllerInput1;	//0xf008-0xf00c 0xf00d-0xf00f:reserved 0xf010-0xf7ff:mirror
+	bitset<0x8000> ROM;	//0x0000-0x7fff
+	bitset<0x4000> RAM;	//0x8000-0xbfff
+	bitset<0x17> VRAM;	//0xc000-0xc016 0xc017-0xc01f:reserved 0xc020-0xdfff:mirror 
+	bitset<0x5> ARAM;	//0xe000-0xe004 0xe005-0xe007:reserved 0xe008-0xefff:mirror
+	bitset<0x5> ControllerInput0;	//0xf000-0xf004 0xf005-0xf007:reserved
+	bitset<0x5> ControllerInput1;	//0xf008-0xf00c 0xf00d-0xf00f:reserved 0xf010-0xf7ff:mirror
 	//0xf800-0xffff:reserved
 
 	Memory() {
-		ROM.resize(0x8000, false);
-		RAM.resize(0x4000, false);
-		VRAM.resize(0x17, false);
-		ARAM.resize(0x5, false);
-		ControllerInput0.resize(0x5, false);
-		ControllerInput1.resize(0x5, false);
+
 	}
 
 	void BakeRom(vector<bool> input) {
@@ -1021,13 +1016,13 @@ public:
 			case 4:
 			case 5:
 			case 6:
-				inst = (uint8_t)bitset<6>(inst).set(stage - 2, memory.read(P - 1)).to_ulong();
+				inst |= memory.read(P - 1) << (stage - 2);
 				P++;
 				stage++;
 				tick++;
 				break;
 			case 7:
-				inst = (uint8_t)bitset<6>(inst).set(stage - 2, memory.read(P - 1)).to_ulong();
+				inst |= memory.read(P - 1) << (stage - 2);
 				stage++;
 				tick++;
 				break;
@@ -1592,7 +1587,7 @@ nop
 	for (size_t i = 0; i < 60; i++)
 	{
 		b.P = 0;
-		b.Execute(1516880);
+		b.Execute(1516881);
 	}
 	QueryPerformanceCounter(&qpc1);
 	wcout << L"Z=" << b.Z << L" X=" << b.X << L" Y=" << b.Y << L" C=" << b.C << L" B=" << b.B << L" P=" << b.P << L" (0x8000)=" << b.memory.read16(0x8000) << endl;
