@@ -4,6 +4,7 @@
 #include<vector>
 #include<iostream>
 #include<bitset>
+#include<Windows.h>
 
 using namespace std;
 
@@ -1002,6 +1003,7 @@ public:
 
 	void Execute(size_t count) {
 		size_t tick = 0;
+		size_t inst_count = 0;
 		while (tick < count)
 		{
 			switch (stage) {
@@ -1030,6 +1032,7 @@ public:
 				tick++;
 				break;
 			case 8:
+				inst_count++;
 				switch (inst)
 				{
 				case 0:	//nop,mtn
@@ -1524,29 +1527,75 @@ public:
 };
 
 int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
-	list<Token> tokens = BBBBrainDumbed::Tokenizer(LR"(cli clj mfn mty
-;loop:
+	list<Token> tokens = BBBBrainDumbed::Tokenizer(LR"(
+cli
+ld0 ld0 ld0 ld8
+mta
+;loop: 6
+
+;LD16M B[15:0]=(A)[15:0]
+cli clj mfn mty
+;loop1: 10
 mfb ldr mtb mfa
 mtx sec
 ad4 ad4 ad4 ad4
 mtx 
-ld6 ld9 ld0 ld0
+ld2 ldd ld0 ld0 ;end1 addr
 mta mfj
 bzz mfx mta
-ld8 ld1 ld0 ld0
+ldc ld3 ld0 ld0 ;loop1 addr
 mtp
-;end:
+;end1: 35
+
+mfx mtd
+lde ld2 ld2 ld0 ;end addr
+mta
+ld0 lde ld0 ld7
+mty
+ad4 ad4 ad4 ad4
+bzz
+ld0 ld0 ld0 ldc
+mta mfb 
+
+;ST16A (A)[15:0]=Z[15:0]
+cli clj mtb mfn
+mty
+;loop2: 63
+mfb str mfa mtx
+sec ad4 mtx cli 
+lde ldf ld1 ld0 ;end2 addr
+mta mfj
+bzz mfx mta
+lda ld7 ld1 ld0 ;loop2 addr
+mtp
+;end2: 85
+
+mfd mta
+ld4 ld2 ld0 ld0 ;loop addr
+mtp
+;end: 93
+nop
 )", L"");
 	BBBBrainDumbed::CheckTokenError(tokens);
 	vector<bool> ROM = BBBBrainDumbed::Parser(tokens);
 	BBBBrainDumbed b;
 	b.memory.BakeRom(ROM);
+	b.Z = 12345;
 	b.X = 60000;
 	b.Y = 10000;
 	b.C = 1;
 	b.A = 0x8000;
 	b.memory.write(0x8000, (uint16_t)52149);
-	b.Execute(0x10000);
-	wcout << L"Z=" << b.Z << L" X=" << b.X << L" Y=" << b.Y << L" C=" << b.C << endl;
+	LARGE_INTEGER qpc0, qpc1, qpf;
+	QueryPerformanceFrequency(&qpf);
+	QueryPerformanceCounter(&qpc0);
+	for (size_t i = 0; i < 60; i++)
+	{
+		b.P = 0;
+		b.Execute(1516880);
+	}
+	QueryPerformanceCounter(&qpc1);
+	wcout << L"Z=" << b.Z << L" X=" << b.X << L" Y=" << b.Y << L" C=" << b.C << L" B=" << b.B << L" P=" << b.P << L" (0x8000)=" << b.memory.read16(0x8000) << endl;
+	wcout << (double)(qpc1.QuadPart - qpc0.QuadPart) / qpf.QuadPart << endl;
 	return 0;
 }
