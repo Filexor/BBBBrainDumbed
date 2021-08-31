@@ -101,9 +101,18 @@ public:
 		}
 	}
 
+	uint8_t read6(uint16_t address) {
+		uint8_t out = 0;
+		for (uint8_t i = 0; i < 6; i++)
+		{
+			out |= read(address + i) << i;
+		}
+		return out;
+	}
+
 	uint16_t read16(uint16_t address) {
 		uint16_t out = 0;
-		for (size_t i = 0; i < 16; i++)
+		for (uint8_t i = 0; i < 16; i++)
 		{
 			out |= read(address + i) << i;
 		}
@@ -155,14 +164,14 @@ public:
 	}
 
 	void write(uint16_t address, vector<bool> value) {
-		for (size_t i = 0; i < value.size(); i++)
+		for (uint8_t i = 0; i < value.size(); i++)
 		{
 			write(address + i, value[i]);
 		}
 	}
 
 	void write(uint16_t address, uint16_t value) {
-		for (size_t i = 0; i < 16; i++)
+		for (uint8_t i = 0; i < 16; i++)
 		{
 			write(address + i, (bool)((value >> i) & 1));
 		}
@@ -1007,9 +1016,19 @@ public:
 				tick++;
 				break;
 			case 1:
-				P++;
-				stage++;
-				tick++;
+				if (P <= (0xf000 - 6))
+				{
+					inst = memory.read6(P);
+					P += 6;
+					stage = 8;
+					tick += 7;
+				}
+				else
+				{
+					P++;
+					stage++;
+					tick++;
+				}
 				break;
 			case 2:
 			case 3:
@@ -1584,7 +1603,7 @@ nop
 	LARGE_INTEGER qpc0, qpc1, qpf;
 	QueryPerformanceFrequency(&qpf);
 	QueryPerformanceCounter(&qpc0);
-	for (size_t i = 0; i < 60; i++)
+	for (size_t i = 0; i < 600; i++)
 	{
 		b.P = 0;
 		b.Execute(1516881);
