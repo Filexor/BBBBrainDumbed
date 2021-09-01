@@ -4,7 +4,12 @@
 #include<vector>
 #include<iostream>
 #include<bitset>
+#include<map>
+#include<fstream>
+#include<exception>
+
 #include<Windows.h>
+
 
 using namespace std;
 
@@ -732,12 +737,22 @@ public:
 
 	static vector<bool> Parser(list<Token> input) {
 		vector<bool> output;
+		map<list<Token>::iterator, wstring> labels;
 		list<Token>::iterator i = input.begin();
 		while (i != input.end())
 		{
 			for (basic_string<wchar_t>::size_type j = 0; j < (*i).token.length(); j++)
 			{
 				(*i).token[j] = towlower((*i).token[j]);
+			}
+			i++;
+		}
+		i = input.begin();
+		while (i != input.end())
+		{
+			if (&(*i).token.back() == L":")
+			{
+
 			}
 			i++;
 		}
@@ -874,131 +889,139 @@ public:
 			}
 			else if ((*i).token == L"ld0")
 			{
-			output.insert(output.end(), { false, false, false, false, false, true });
+				output.insert(output.end(), { false, false, false, false, false, true });
 			}
 			else if ((*i).token == L"ld1")
 			{
-			output.insert(output.end(), { true, false, false, false, false, true });
+				output.insert(output.end(), { true, false, false, false, false, true });
 			}
 			else if ((*i).token == L"ld2")
 			{
-			output.insert(output.end(), { false, true, false, false, false, true });
+				output.insert(output.end(), { false, true, false, false, false, true });
 			}
 			else if ((*i).token == L"ld3")
 			{
-			output.insert(output.end(), { true, true, false, false, false, true });
+				output.insert(output.end(), { true, true, false, false, false, true });
 			}
 			else if ((*i).token == L"ld4")
 			{
-			output.insert(output.end(), { false, false, true, false, false, true });
+				output.insert(output.end(), { false, false, true, false, false, true });
 			}
 			else if ((*i).token == L"ld5")
 			{
-			output.insert(output.end(), { true, false, true, false, false, true });
+				output.insert(output.end(), { true, false, true, false, false, true });
 			}
 			else if ((*i).token == L"ld6")
 			{
-			output.insert(output.end(), { false, true, true, false, false, true });
+				output.insert(output.end(), { false, true, true, false, false, true });
 			}
 			else if ((*i).token == L"ld7")
 			{
-			output.insert(output.end(), { true, true, true, false, false, true });
+				output.insert(output.end(), { true, true, true, false, false, true });
 			}
 			else if ((*i).token == L"ld8")
 			{
-			output.insert(output.end(), { false, false, false, true, false, true });
+				output.insert(output.end(), { false, false, false, true, false, true });
 			}
 			else if ((*i).token == L"ld9")
 			{
-			output.insert(output.end(), { true, false, false, true, false, true });
+				output.insert(output.end(), { true, false, false, true, false, true });
 			}
 			else if ((*i).token == L"lda")
 			{
-			output.insert(output.end(), { false, true, false, true, false, true });
+				output.insert(output.end(), { false, true, false, true, false, true });
 			}
 			else if ((*i).token == L"ldb")
 			{
-			output.insert(output.end(), { true, true, false, true, false, true });
+				output.insert(output.end(), { true, true, false, true, false, true });
 			}
 			else if ((*i).token == L"ldc")
 			{
-			output.insert(output.end(), { false, false, true, true, false, true });
+				output.insert(output.end(), { false, false, true, true, false, true });
 			}
 			else if ((*i).token == L"ldd")
 			{
-			output.insert(output.end(), { true, false, true, true, false, true });
+				output.insert(output.end(), { true, false, true, true, false, true });
 			}
 			else if ((*i).token == L"lde")
 			{
-			output.insert(output.end(), { false, true, true, true, false, true });
+				output.insert(output.end(), { false, true, true, true, false, true });
 			}
 			else if ((*i).token == L"ldf")
 			{
-			output.insert(output.end(), { true, true, true, true, false, true });
+				output.insert(output.end(), { true, true, true, true, false, true });
 			}
 			else if ((*i).token == L"clc")
 			{
-			output.insert(output.end(), { false, false, false, false, true, true });
+				output.insert(output.end(), { false, false, false, false, true, true });
 			}
 			else if ((*i).token == L"sec")
 			{
-			output.insert(output.end(), { true, false, false, false, true, true });
+				output.insert(output.end(), { true, false, false, false, true, true });
 			}
 			else if ((*i).token == L"clm")
 			{
-			output.insert(output.end(), { false, true, false, false, true, true });
+				output.insert(output.end(), { false, true, false, false, true, true });
 			}
 			else if ((*i).token == L"sem")
 			{
-			output.insert(output.end(), { true, true, false, false, true, true });
+				output.insert(output.end(), { true, true, false, false, true, true });
 			}
 			else if ((*i).token == L"cli")
 			{
-			output.insert(output.end(), { false, false, true, false, true, true });
+				output.insert(output.end(), { false, false, true, false, true, true });
 			}
 			else if ((*i).token == L"clj")
 			{
-			output.insert(output.end(), { true, false, true, false, true, true });
+				output.insert(output.end(), { true, false, true, false, true, true });
 			}
 			else if ((*i).token == L"bzz")
 			{
-			output.insert(output.end(), { false, true, true, false, true, true });
+				output.insert(output.end(), { false, true, true, false, true, true });
 			}
 			else if ((*i).token == L"bcc")
 			{
-			output.insert(output.end(), { true, true, true, false, true, true });
+				output.insert(output.end(), { true, true, true, false, true, true });
 			}
 			else if ((*i).token == L"mtv")
 			{
-			output.insert(output.end(), { false, false, false, true, true, true });
+				output.insert(output.end(), { false, false, false, true, true, true });
 			}
 			else if ((*i).token == L"mfv")
 			{
-			output.insert(output.end(), { true, false, false, true, true, true });
+				output.insert(output.end(), { true, false, false, true, true, true });
 			}
 			else if ((*i).token == L"mti")
 			{
-			output.insert(output.end(), { false, true, false, true, true, true });
+				output.insert(output.end(), { false, true, false, true, true, true });
 			}
 			else if ((*i).token == L"mfi")
 			{
-			output.insert(output.end(), { true, true, false, true, true, true });
+				output.insert(output.end(), { true, true, false, true, true, true });
 			}
 			else if ((*i).token == L"mtc")
 			{
-			output.insert(output.end(), { false, false, true, true, true, true });
+				output.insert(output.end(), { false, false, true, true, true, true });
 			}
 			else if ((*i).token == L"mfc")
 			{
-			output.insert(output.end(), { true, false, true, true, true, true });
+				output.insert(output.end(), { true, false, true, true, true, true });
 			}
 			else if ((*i).token == L"mtm")
 			{
-			output.insert(output.end(), { false, true, true, true, true, true });
+				output.insert(output.end(), { false, true, true, true, true, true });
 			}
 			else if ((*i).token == L"mfm")
 			{
-			output.insert(output.end(), { true, true, true, true, true, true });
+				output.insert(output.end(), { true, true, true, true, true, true });
+			}
+			else if ((*i).token == L"binclude")
+			{
+				i++;
+				wstring filename = (*i).token;
+				basic_ifstream<wchar_t> ifs;
+
+				
 			}
 			i++;
 		}
@@ -1541,55 +1564,24 @@ public:
 };
 
 int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
-	list<Token> tokens = BBBBrainDumbed::Tokenizer(LR"(
-cli
-ld0 ld0 ld0 ld8
-mta
-;loop: 6
-
-;LD16M B[15:0]=(A)[15:0]
-cli clj mfn mty
-;loop1: 10
-mfb ldr mtb mfa
-mtx sec
-ad4 ad4 ad4 ad4
-mtx 
-ld2 ldd ld0 ld0 ;end1 addr
-mta mfj
-bzz mfx mta
-ldc ld3 ld0 ld0 ;loop1 addr
-mtp
-;end1: 35
-
-mfx mtd
-lde ld2 ld2 ld0 ;end addr
-mta
-ld0 lde ld0 ld7
-mty
-ad4 ad4 ad4 ad4
-bzz
-ld0 ld0 ld0 ldc
-mta mfb 
-
-;ST16A (A)[15:0]=Z[15:0]
-cli clj mtb mfn
-mty
-;loop2: 63
-mfb str mfa mtx
-sec ad4 mtx cli 
-lde ldf ld1 ld0 ;end2 addr
-mta mfj
-bzz mfx mta
-lda ld7 ld1 ld0 ;loop2 addr
-mtp
-;end2: 85
-
-mfd mta
-ld4 ld2 ld0 ld0 ;loop addr
-mtp
-;end: 93
-nop
-)", L"");
+	wstring exepath, filepath;
+	basic_ifstream<wchar_t> ifs;
+	if (argc >= 2)
+	{
+		ifs.open(argv[1]);
+		if (ifs.fail())
+		{
+			return 2;
+		}
+		
+	}
+	else
+	{
+		return 1;
+	}
+	istreambuf_iterator<wchar_t> ifsbegin(ifs), ifsend;
+	wstring finput(ifsbegin,ifsend);
+	list<Token> tokens = BBBBrainDumbed::Tokenizer(finput, filepath);
 	BBBBrainDumbed::CheckTokenError(tokens);
 	vector<bool> ROM = BBBBrainDumbed::Parser(tokens);
 	BBBBrainDumbed b;
@@ -1603,7 +1595,7 @@ nop
 	LARGE_INTEGER qpc0, qpc1, qpf;
 	QueryPerformanceFrequency(&qpf);
 	QueryPerformanceCounter(&qpc0);
-	for (size_t i = 0; i < 600; i++)
+	for (size_t i = 0; i < 1; i++)
 	{
 		b.P = 0;
 		b.Execute(1516881);
