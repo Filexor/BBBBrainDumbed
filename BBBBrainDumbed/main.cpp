@@ -217,7 +217,7 @@ public:
 			{
 				break;
 			}
-			if (input[i] == L':'/* || input[i] == L',' || input[i] == L'(' || input[i] == L')'*/ && false)	//label and others (unused)
+			if (input[i] == L':' || input[i] == L',' || input[i] == L'(' || input[i] == L')' || input[i] == L'+' || input[i] == L'-' || input[i] == L'/' || input[i] == L'%' || input[i] == L'|' || input[i] == L'&' || input[i] == L'^' || input[i] == L'~' || input[i] == L'!' || input[i] == L'<' || input[i] == L'>')	//label and others
 			{
 				tmp.filename = filename;
 				tmp.token.push_back(input[i]);
@@ -811,6 +811,8 @@ public:
 		}
 		return 0;
 	}
+
+
 
 	static vector<bool> Parser(list<Token> input) {
 		vector<bool> output;
