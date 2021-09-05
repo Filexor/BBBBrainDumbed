@@ -10,6 +10,7 @@
 
 #include<Windows.h>
 
+#include"instructions.h"
 
 using namespace std;
 
@@ -735,10 +736,87 @@ public:
 		return error;
 	}
 
+	static bool hasNumber(wstring input, instructions insts) {
+		/*
+		followings has number: binary(start with 0b), quaternary(start with 0q), octal(start with 0o or 0), decimal(no prefix or start with 0d), hexadecimal(start with 0x), quoted text(surrounded by ' or "), identifier(enything else without end with :), label(enything else with end with :)
+		followings does not have number: mnemonic, directive, operator
+		*/
+		auto i = insts.inst.find(input);
+		if (i != insts.inst.end() && (i->second.itype == instructionType::mnemonic || i->second.itype == instructionType::directive || i->second.itype == instructionType::$operator))
+		{
+			return false;
+		}
+		return true;
+	}
+
+	static int64_t toNumber(wstring input, instructions insts) {
+		auto i = insts.inst.find(input);
+		if (i != insts.inst.end())
+		{
+			if (i->second.itype == instructionType::knownnumber)
+			{
+				return i->second.value;
+			}
+			else
+			{
+				throw runtime_error("unresolved value");
+			}
+		}
+		else if (input[0] == L'0')
+		{
+			if (input[1] == L'b')
+			{
+				input.erase(0, 2);
+				return stoll(input, nullptr, 2);
+			}
+			else if (input[1] == L'q')
+			{
+				input.erase(0, 2);
+				return stoll(input, nullptr, 4);
+			}
+			else if (input[1] == L'o')
+			{
+				input.erase(0, 2);
+				return stoll(input, nullptr, 8);
+			}
+			else if (input[1] == L'd')
+			{
+				input.erase(0, 2);
+				return stoll(input, nullptr, 10);
+			}
+			else if (input[1] == L'x')
+			{
+				input.erase(0, 2);
+				return stoll(input, nullptr, 16);
+			}
+			else
+			{
+				return stoll(input, nullptr, 0);
+			}
+		}
+		else if (input[0] >= L'1' && input[0] <= L'9')
+		{
+			return stoll(input, nullptr, 10);
+		}
+		else if ((input[0] == L'\"' && input.back() == L'\"') || (input[0] == L'\'' && input.back() == L'\''))
+		{
+			input.erase(0, 1);
+			input.erase(input.size() - 1, 1);
+			input.resize(sizeof(wchar_t) * 4, 0);
+			return (int64_t)*input.c_str();
+		}
+		else
+		{
+			throw runtime_error("not a number");
+		}
+		return 0;
+	}
+
 	static vector<bool> Parser(list<Token> input) {
 		vector<bool> output;
 		map<list<Token>::iterator, wstring> labels;
 		list<Token>::iterator i = input.begin();
+		instructions insts;
 		while (i != input.end())
 		{
 			for (basic_string<wchar_t>::size_type j = 0; j < (*i).token.length(); j++)
@@ -747,280 +825,71 @@ public:
 			}
 			i++;
 		}
+		/*
+		processing order: convert to binary (leave unresolved reference empty) -> resolve reference -> overwrite resolved reference -> end
+
+		What to do if we meet like this:
+			binclude "filename" filesize	;<- size need to know filesize
+			filesize:	;<- filesize need to know size of binclude which defined by filesize (self reference)
+		Dependency of label is all of previously appeared size-defining identifier
+		*/
 		i = input.begin();
 		while (i != input.end())
 		{
-			if (&(*i).token.back() == L":")
+			auto j = insts.inst.find((*i).token);
+			if (j == insts.inst.end())
 			{
+				if ((*i).token.back() == L':')	//label
+				{
+					wstring l = (*i).token;
+					l.pop_back();
+					auto k = insts.inst.find(l);
+					if (k == insts.inst.end())
+					{
+						insts.inst.insert(make_pair(l, instruction(0, instructionType::unknownnumber, 0)));
+					}
+					else
+					{
+						throw runtime_error("multiple labels with same identifier found");
+					}
+				}
+				else	//identifier
+				{
+					throw runtime_error("identifier must be come with mnemonic or directive");
+				}
+			}
+			else
+			{
+				if (j->second.itype == instructionType::mnemonic)
+				{
+					for (size_t k = 0; k < j->second.opcode.size(); k++)
+					{
+						output.push_back(j->second.opcode.test(k));
+					}
+				}
+				else if (j->second.itype == instructionType::directive)
+				{
+					if (j->first == L"binclude")
+					{
 
-			}
-			i++;
-		}
-		i = input.begin();
-		while (i != input.end())
-		{
-			if ((*i).token == L"nop" || (*i).token == L"mtn")
-			{
-				output.insert(output.end(), { false, false, false, false, false, false });
-			}
-			else if ((*i).token == L"mtx")
-			{
-				output.insert(output.end(), { true, false, false, false, false, false });
-			}
-			else if ((*i).token == L"mty")
-			{
-				output.insert(output.end(), { false, true, false, false, false, false });
-			}
-			else if ((*i).token == L"mta")
-			{
-				output.insert(output.end(), { true, true, false, false, false, false });
-			}
-			else if ((*i).token == L"mtb")
-			{
-				output.insert(output.end(), { false, false, true, false, false, false });
-			}
-			else if ((*i).token == L"mtd")
-			{
-				output.insert(output.end(), { true, false, true, false, false, false });
-			}
-			else if ((*i).token == L"mte")
-			{
-				output.insert(output.end(), { false, true, true, false, false, false });
-			}
-			else if ((*i).token == L"mtp")
-			{
-				output.insert(output.end(), { true, true, true, false, false, false });
-			}
-			else if ((*i).token == L"mfn")
-			{
-				output.insert(output.end(), { false, false, false, true, false, false });
-			}
-			else if ((*i).token == L"mfx")
-			{
-				output.insert(output.end(), { true, false, false, true, false, false });
-			}
-			else if ((*i).token == L"mfy")
-			{
-				output.insert(output.end(), { false, true, false, true, false, false });
-			}
-			else if ((*i).token == L"mfa")
-			{
-				output.insert(output.end(), { true, true, false, true, false, false });
-			}
-			else if ((*i).token == L"mfb")
-			{
-				output.insert(output.end(), { false, false, true, true, false, false });
-			}
-			else if ((*i).token == L"mfd")
-			{
-				output.insert(output.end(), { true, false, true, true, false, false });
-			}
-			else if ((*i).token == L"mfe")
-			{
-				output.insert(output.end(), { false, true, true, true, false, false });
-			}
-			else if ((*i).token == L"mfp")
-			{
-				output.insert(output.end(), { true, true, true, true, false, false });
-			}
-			else if ((*i).token == L"bse")
-			{
-				output.insert(output.end(), { false, false, false, false, true, false });
-			}
-			else if ((*i).token == L"bnt")
-			{
-				output.insert(output.end(), { true, false, false, false, true, false });
-			}
-			else if ((*i).token == L"bor")
-			{
-				output.insert(output.end(), { false, true, false, false, true, false });
-			}
-			else if ((*i).token == L"ban")
-			{
-				output.insert(output.end(), { true, true, false, false, true, false });
-			}
-			else if ((*i).token == L"bxo")
-			{
-				output.insert(output.end(), { false, false, true, false, true, false });
-			}
-			else if ((*i).token == L"not")
-			{
-				output.insert(output.end(), { true, false, true, false, true, false });
-			}
-			else if ((*i).token == L"shl")
-			{
-				output.insert(output.end(), { false, true, true, false, true, false });
-			}
-			else if ((*i).token == L"shr")
-			{
-				output.insert(output.end(), { true, true, true, false, true, false });
-			}
-			else if ((*i).token == L"asr")
-			{
-				output.insert(output.end(), { false, false, false, true, true, false });
-			}
-			else if ((*i).token == L"ror")
-			{
-				output.insert(output.end(), { true, false, false, true, true, false });
-			}
-			else if ((*i).token == L"ad1")
-			{
-				output.insert(output.end(), { false, true, false, true, true, false });
-			}
-			else if ((*i).token == L"ad4")
-			{
-				output.insert(output.end(), { true, true, false, true, true, false });
-			}
-			else if ((*i).token == L"ldr")
-			{
-				output.insert(output.end(), { false, false, true, true, true, false });
-			}
-			else if ((*i).token == L"str")
-			{
-				output.insert(output.end(), { true, false, true, true, true, false });
-			}
-			else if ((*i).token == L"mtj")
-			{
-				output.insert(output.end(), { false, true, true, true, true, false });
-			}
-			else if ((*i).token == L"mfj")
-			{
-				output.insert(output.end(), { true, true, true, true, true, false });
-			}
-			else if ((*i).token == L"ld0")
-			{
-				output.insert(output.end(), { false, false, false, false, false, true });
-			}
-			else if ((*i).token == L"ld1")
-			{
-				output.insert(output.end(), { true, false, false, false, false, true });
-			}
-			else if ((*i).token == L"ld2")
-			{
-				output.insert(output.end(), { false, true, false, false, false, true });
-			}
-			else if ((*i).token == L"ld3")
-			{
-				output.insert(output.end(), { true, true, false, false, false, true });
-			}
-			else if ((*i).token == L"ld4")
-			{
-				output.insert(output.end(), { false, false, true, false, false, true });
-			}
-			else if ((*i).token == L"ld5")
-			{
-				output.insert(output.end(), { true, false, true, false, false, true });
-			}
-			else if ((*i).token == L"ld6")
-			{
-				output.insert(output.end(), { false, true, true, false, false, true });
-			}
-			else if ((*i).token == L"ld7")
-			{
-				output.insert(output.end(), { true, true, true, false, false, true });
-			}
-			else if ((*i).token == L"ld8")
-			{
-				output.insert(output.end(), { false, false, false, true, false, true });
-			}
-			else if ((*i).token == L"ld9")
-			{
-				output.insert(output.end(), { true, false, false, true, false, true });
-			}
-			else if ((*i).token == L"lda")
-			{
-				output.insert(output.end(), { false, true, false, true, false, true });
-			}
-			else if ((*i).token == L"ldb")
-			{
-				output.insert(output.end(), { true, true, false, true, false, true });
-			}
-			else if ((*i).token == L"ldc")
-			{
-				output.insert(output.end(), { false, false, true, true, false, true });
-			}
-			else if ((*i).token == L"ldd")
-			{
-				output.insert(output.end(), { true, false, true, true, false, true });
-			}
-			else if ((*i).token == L"lde")
-			{
-				output.insert(output.end(), { false, true, true, true, false, true });
-			}
-			else if ((*i).token == L"ldf")
-			{
-				output.insert(output.end(), { true, true, true, true, false, true });
-			}
-			else if ((*i).token == L"clc")
-			{
-				output.insert(output.end(), { false, false, false, false, true, true });
-			}
-			else if ((*i).token == L"sec")
-			{
-				output.insert(output.end(), { true, false, false, false, true, true });
-			}
-			else if ((*i).token == L"clm")
-			{
-				output.insert(output.end(), { false, true, false, false, true, true });
-			}
-			else if ((*i).token == L"sem")
-			{
-				output.insert(output.end(), { true, true, false, false, true, true });
-			}
-			else if ((*i).token == L"cli")
-			{
-				output.insert(output.end(), { false, false, true, false, true, true });
-			}
-			else if ((*i).token == L"clj")
-			{
-				output.insert(output.end(), { true, false, true, false, true, true });
-			}
-			else if ((*i).token == L"bzz")
-			{
-				output.insert(output.end(), { false, true, true, false, true, true });
-			}
-			else if ((*i).token == L"bcc")
-			{
-				output.insert(output.end(), { true, true, true, false, true, true });
-			}
-			else if ((*i).token == L"mtv")
-			{
-				output.insert(output.end(), { false, false, false, true, true, true });
-			}
-			else if ((*i).token == L"mfv")
-			{
-				output.insert(output.end(), { true, false, false, true, true, true });
-			}
-			else if ((*i).token == L"mti")
-			{
-				output.insert(output.end(), { false, true, false, true, true, true });
-			}
-			else if ((*i).token == L"mfi")
-			{
-				output.insert(output.end(), { true, true, false, true, true, true });
-			}
-			else if ((*i).token == L"mtc")
-			{
-				output.insert(output.end(), { false, false, true, true, true, true });
-			}
-			else if ((*i).token == L"mfc")
-			{
-				output.insert(output.end(), { true, false, true, true, true, true });
-			}
-			else if ((*i).token == L"mtm")
-			{
-				output.insert(output.end(), { false, true, true, true, true, true });
-			}
-			else if ((*i).token == L"mfm")
-			{
-				output.insert(output.end(), { true, true, true, true, true, true });
-			}
-			else if ((*i).token == L"binclude")
-			{
-				i++;
-				wstring filename = (*i).token;
-				basic_ifstream<wchar_t> ifs;
+					}
+				}
+				else if ((*i).token == L"binclude")	//format: binclude filename [filesize] [fileoffset]
+				{
+					i++;
+					wstring filepath = (*i).token;
+					basic_ifstream<char> ifs;
+					ifs.open(filepath, ios_base::binary | ios_base::in);
+					if (ifs.fail())
+					{
+						throw runtime_error("failed to open file");
+					}
+					istreambuf_iterator<char> ifsbegin(ifs), ifsend;
+					string finput(ifsbegin, ifsend);
+					ifs.close();
 
+
+				}
 				
 			}
 			i++;
@@ -1581,6 +1450,7 @@ int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
 	}
 	istreambuf_iterator<wchar_t> ifsbegin(ifs), ifsend;
 	wstring finput(ifsbegin,ifsend);
+	ifs.close();
 	list<Token> tokens = BBBBrainDumbed::Tokenizer(finput, filepath);
 	BBBBrainDumbed::CheckTokenError(tokens);
 	vector<bool> ROM = BBBBrainDumbed::Parser(tokens);

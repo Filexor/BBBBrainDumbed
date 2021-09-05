@@ -124,6 +124,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="instructions.h" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
