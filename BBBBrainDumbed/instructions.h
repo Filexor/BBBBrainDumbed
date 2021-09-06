@@ -13,16 +13,30 @@ enum class instructionType
 	knownnumber
 };
 
+enum class associativity
+{
+	left_associative,
+	right_associative,
+};
+
 class instruction {
 public:
 	bitset<6> opcode;
 	instructionType itype;
 	int64_t value;
+	associativity atype;
 
 	instruction(unsigned long long _opcode, instructionType _itype, int64_t _value) {
 		opcode = _opcode;
 		itype = _itype;
 		value = _value;
+		atype = associativity::left_associative;
+	}
+	instruction(unsigned long long _opcode, instructionType _itype, int64_t _value, associativity _atype) {
+		opcode = _opcode;
+		itype = _itype;
+		value = _value;
+		atype = _atype;
 	}
 };
 
@@ -102,28 +116,29 @@ public:
 		inst.insert(make_pair(L"define", instruction(0, instructionType::directive, 0)));
 		inst.insert(make_pair(L"equ", instruction(0, instructionType::directive, 0)));
 
-		inst.insert(make_pair(L"+", instruction(0, instructionType::$operator, 0)));	//add
-		inst.insert(make_pair(L"-", instruction(0, instructionType::$operator, 0)));	//sub
-		inst.insert(make_pair(L"*", instruction(0, instructionType::$operator, 0)));	//mul
-		inst.insert(make_pair(L"/", instruction(0, instructionType::$operator, 0)));	//div
-		inst.insert(make_pair(L"%", instruction(0, instructionType::$operator, 0)));	//mod
-		inst.insert(make_pair(L"**", instruction(0, instructionType::$operator, 0)));	//pow
-		inst.insert(make_pair(L"|", instruction(0, instructionType::$operator, 0)));	//bitwise or
-		inst.insert(make_pair(L"&", instruction(0, instructionType::$operator, 0)));	//bitwise and
-		inst.insert(make_pair(L"^", instruction(0, instructionType::$operator, 0)));	//bitwise xor
-		inst.insert(make_pair(L"~", instruction(0, instructionType::$operator, 0)));	//bitwise not
-		inst.insert(make_pair(L"<<", instruction(0, instructionType::$operator, 0)));	//shift left
-		inst.insert(make_pair(L">>", instruction(0, instructionType::$operator, 0)));	//logical shift right
-		inst.insert(make_pair(L">>>", instruction(0, instructionType::$operator, 0)));	//arithmetic shift right
-		inst.insert(make_pair(L"||", instruction(0, instructionType::$operator, 0)));	//bool or
-		inst.insert(make_pair(L"&&", instruction(0, instructionType::$operator, 0)));	//bool and
-		inst.insert(make_pair(L"^^", instruction(0, instructionType::$operator, 0)));	//bool xor
-		inst.insert(make_pair(L"!", instruction(0, instructionType::$operator, 0)));	//bool not
-		inst.insert(make_pair(L"<", instruction(0, instructionType::$operator, 0)));	//bool less than
-		inst.insert(make_pair(L">", instruction(0, instructionType::$operator, 0)));	//bool greater than
-		inst.insert(make_pair(L"<=", instruction(0, instructionType::$operator, 0)));	//bool less or equal
-		inst.insert(make_pair(L">=", instruction(0, instructionType::$operator, 0)));	//bool greater or equal
-		inst.insert(make_pair(L"==", instruction(0, instructionType::$operator, 0)));	//bool equal
-		inst.insert(make_pair(L"!=", instruction(0, instructionType::$operator, 0)));	//bool not equal
+		inst.insert(make_pair(L"+", instruction(0, instructionType::$operator, 11)));	//add, pos(13)
+		inst.insert(make_pair(L"-", instruction(0, instructionType::$operator, 11)));	//sub, neg(13)
+		inst.insert(make_pair(L"*", instruction(0, instructionType::$operator, 12)));	//mul
+		inst.insert(make_pair(L"/", instruction(0, instructionType::$operator, 12)));	//div
+		inst.insert(make_pair(L"%", instruction(0, instructionType::$operator, 12)));	//mod
+		inst.insert(make_pair(L"**", instruction(0, instructionType::$operator, 14, associativity::right_associative)));	//pow
+		inst.insert(make_pair(L"|", instruction(0, instructionType::$operator, 5)));	//bitwise or
+		inst.insert(make_pair(L"&", instruction(0, instructionType::$operator, 7)));	//bitwise and
+		inst.insert(make_pair(L"^", instruction(0, instructionType::$operator, 6)));	//bitwise xor
+		inst.insert(make_pair(L"~", instruction(0, instructionType::$operator, 15, associativity::right_associative)));	//bitwise not
+		inst.insert(make_pair(L"<<", instruction(0, instructionType::$operator, 10)));	//shift left
+		inst.insert(make_pair(L">>", instruction(0, instructionType::$operator, 10)));	//logical shift right
+		inst.insert(make_pair(L">>>", instruction(0, instructionType::$operator, 10)));	//arithmetic shift right
+		inst.insert(make_pair(L"||", instruction(0, instructionType::$operator, 2)));	//bool or
+		inst.insert(make_pair(L"&&", instruction(0, instructionType::$operator, 4)));	//bool and
+		inst.insert(make_pair(L"^^", instruction(0, instructionType::$operator, 3)));	//bool xor
+		inst.insert(make_pair(L"!", instruction(0, instructionType::$operator, 15, associativity::right_associative)));	//bool not
+		inst.insert(make_pair(L"<", instruction(0, instructionType::$operator, 9)));	//bool less than
+		inst.insert(make_pair(L">", instruction(0, instructionType::$operator, 9)));	//bool greater than
+		inst.insert(make_pair(L"<=", instruction(0, instructionType::$operator, 9)));	//bool less or equal
+		inst.insert(make_pair(L">=", instruction(0, instructionType::$operator, 9)));	//bool greater or equal
+		inst.insert(make_pair(L"==", instruction(0, instructionType::$operator, 8)));	//bool equal
+		inst.insert(make_pair(L"!=", instruction(0, instructionType::$operator, 8)));	//bool not equal
+		inst.insert(make_pair(L",", instruction(0, instructionType::$operator, 1)));	//bool not equal
 	}
 };

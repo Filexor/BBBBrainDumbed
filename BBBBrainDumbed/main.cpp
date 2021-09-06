@@ -217,7 +217,7 @@ public:
 			{
 				break;
 			}
-			if (input[i] == L':' || input[i] == L',' || input[i] == L'(' || input[i] == L')' || input[i] == L'+' || input[i] == L'-' || input[i] == L'/' || input[i] == L'%' || input[i] == L'|' || input[i] == L'&' || input[i] == L'^' || input[i] == L'~' || input[i] == L'!' || input[i] == L'<' || input[i] == L'>')	//label and others
+			if (input[i] == L':' || input[i] == L',' || input[i] == L'(' || input[i] == L')' || input[i] == L'+' || input[i] == L'-' || input[i] == L'/' || input[i] == L'%' || input[i] == L'|' || input[i] == L'&' || input[i] == L'^' || input[i] == L'~' || input[i] == L'!')	//label and others
 			{
 				tmp.filename = filename;
 				tmp.token.push_back(input[i]);
@@ -753,7 +753,7 @@ public:
 		auto i = insts.inst.find(input);
 		if (i != insts.inst.end())
 		{
-			if (i->second.itype == instructionType::knownnumber)
+			if (i->second.itype == instructionType::knownnumber || i->second.itype == instructionType::$operator)
 			{
 				return i->second.value;
 			}
@@ -812,7 +812,98 @@ public:
 		return 0;
 	}
 
+	static list<Token>::iterator peekToken(list<Token> input, list<Token>::iterator i) {
+		auto j = ++i;
+		--i;
+		if (j == input.end())
+		{
+			return i;
+		}
+		else
+		{
+			return j;
+		}
+	}
 
+	static list<Token>::iterator getToken(list<Token> input, list<Token>::iterator i) {
+		auto j = ++i;
+		if (j == input.end())
+		{
+			return i;
+		}
+		else
+		{
+			return j;
+		}
+	}
+
+	static vector<wstring> parseExpression(list<Token> input, list<Token>::iterator i, instructions insts) {
+		vector<wstring> lifo;
+		vector<wstring> output;
+		while (peekToken(input, i) != i && peekToken(input, i)->token != L",")
+		{
+			i++;
+			if (hasNumber(i->token, insts))
+			{
+				output.push_back(i->token);
+			}
+			else if (insts.inst.find(i->token)->second.itype == instructionType::$operator)
+			{
+				while (lifo.size() > 0)
+				{
+					if (insts.inst.find(lifo.back())->second.itype == instructionType::$operator && (((insts.inst.find(i->token)->second.atype == associativity::left_associative) && (insts.inst.find(i->token)->second.value <= insts.inst.find(lifo.back())->second.value)) || (insts.inst.find(i->token)->second.value < insts.inst.find(lifo.back())->second.value)))
+					{
+						output.push_back(lifo.back());
+						lifo.pop_back();
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+			else if (i->token == L"(")
+			{
+				lifo.push_back(i->token);
+			}
+			else if (i->token == L")")
+			{
+				bool pe = false;
+				while (lifo.size() > 0)
+				{
+					if (lifo.back() == L"(")
+					{
+						lifo.pop_back();
+						pe = true;
+						break;
+					}
+					else
+					{
+						output.push_back(lifo.back());
+						lifo.pop_back();
+					}
+				}
+				if (!pe)
+				{
+					throw runtime_error("parenthesis mismatch");
+				}
+			}
+		}
+		while (lifo.size() > 0)
+		{
+			if (lifo.back() == L"(" || lifo.back() == L")")
+			{
+				throw runtime_error("parenthesis mismatch");
+			}
+			output.push_back(lifo.back());
+			lifo.pop_back();
+		}
+		return output;
+	}
+
+	static int64_t evalExpression() {
+
+	}
 
 	static vector<bool> Parser(list<Token> input) {
 		vector<bool> output;
@@ -876,7 +967,7 @@ public:
 
 					}
 				}
-				else if ((*i).token == L"binclude")	//format: binclude filename [filesize] [fileoffset]
+				else if ((*i).token == L"binclude")	//format: binclude filename,[filesize],[fileoffset]
 				{
 					i++;
 					wstring filepath = (*i).token;
