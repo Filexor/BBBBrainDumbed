@@ -121,7 +121,7 @@ public:
 		inst.insert(make_pair(L"*", instruction(0, instructionType::$operator, 12)));	//mul
 		inst.insert(make_pair(L"/", instruction(0, instructionType::$operator, 12)));	//div
 		inst.insert(make_pair(L"%", instruction(0, instructionType::$operator, 12)));	//mod
-		inst.insert(make_pair(L"**", instruction(0, instructionType::$operator, 14, associativity::right_associative)));	//pow
+		//inst.insert(make_pair(L"**", instruction(0, instructionType::$operator, 14, associativity::right_associative)));	//pow
 		inst.insert(make_pair(L"|", instruction(0, instructionType::$operator, 5)));	//bitwise or
 		inst.insert(make_pair(L"&", instruction(0, instructionType::$operator, 7)));	//bitwise and
 		inst.insert(make_pair(L"^", instruction(0, instructionType::$operator, 6)));	//bitwise xor

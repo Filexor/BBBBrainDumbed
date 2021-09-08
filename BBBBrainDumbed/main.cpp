@@ -185,8 +185,9 @@ public:
 };
 
 enum class TokenError {
-	OK = 0,
-	UnexpectedEndOfFile = 1
+	OK,
+	UnexpectedEndOfFile,
+	IllegalOperand
 };
 
 class Token {
@@ -217,7 +218,7 @@ public:
 			{
 				break;
 			}
-			if (input[i] == L':' || input[i] == L',' || input[i] == L'(' || input[i] == L')' || input[i] == L'+' || input[i] == L'-' || input[i] == L'/' || input[i] == L'%' || input[i] == L'|' || input[i] == L'&' || input[i] == L'^' || input[i] == L'~' || input[i] == L'!')	//label and others
+			if (input[i] == L':' || input[i] == L',' || input[i] == L'(' || input[i] == L')' || input[i] == L'+' || input[i] == L'-' || input[i] == L'*' || input[i] == L'/' || input[i] == L'%' || input[i] == L'~')	//label and operands
 			{
 				tmp.filename = filename;
 				tmp.token.push_back(input[i]);
@@ -225,6 +226,171 @@ public:
 				digit++;
 				output.push_back(tmp);
 				continue;
+			}
+			if (input[i] == L'<')
+			{
+				if ((i + 1) < input.length() && (input[i + 1] == L'<' || input[i + 1] == L'='))
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					tmp.token.push_back(input[i + 1]);
+					i += 2;
+					digit += 2;
+					output.push_back(tmp);
+					continue;
+				}
+				else
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					i++;
+					digit++;
+					output.push_back(tmp);
+					continue;
+				}
+			}
+			if (input[i] == L'>')
+			{
+				if ((i + 2) < input.length() && input[i + 1] == L'>' && input[i + 2] == L'>')
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					tmp.token.push_back(input[i + 1]);
+					tmp.token.push_back(input[i + 2]);
+					i += 3;
+					digit += 3;
+					output.push_back(tmp);
+					continue;
+				}
+				else if ((i + 1) < input.length() && (input[i + 1] == L'>' || input[i + 1] == L'='))
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					tmp.token.push_back(input[i + 1]);
+					i += 2;
+					digit += 2;
+					output.push_back(tmp);
+					continue;
+				}
+				else
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					i++;
+					digit++;
+					output.push_back(tmp);
+					continue;
+				}
+			}
+			if (input[i] == L'|')
+			{
+				if ((i + 1) < input.length() && input[i + 1] == L'|')
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					tmp.token.push_back(input[i + 1]);
+					i += 2;
+					digit += 2;
+					output.push_back(tmp);
+					continue;
+				}
+				else
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					i++;
+					digit++;
+					output.push_back(tmp);
+					continue;
+				}
+			}
+			if (input[i] == L'&')
+			{
+				if ((i + 1) < input.length() && input[i + 1] == L'&')
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					tmp.token.push_back(input[i + 1]);
+					i += 2;
+					digit += 2;
+					output.push_back(tmp);
+					continue;
+				}
+				else
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					i++;
+					digit++;
+					output.push_back(tmp);
+					continue;
+				}
+			}
+			if (input[i] == L'^')
+			{
+				if ((i + 1) < input.length() && input[i + 1] == L'^')
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					tmp.token.push_back(input[i + 1]);
+					i += 2;
+					digit += 2;
+					output.push_back(tmp);
+					continue;
+				}
+				else
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					i++;
+					digit++;
+					output.push_back(tmp);
+					continue;
+				}
+			}
+			if (input[i] == L'!')
+			{
+				if ((i + 1) < input.length() && input[i + 1] == L'=')
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					tmp.token.push_back(input[i + 1]);
+					i += 2;
+					digit += 2;
+					output.push_back(tmp);
+					continue;
+				}
+				else
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					i++;
+					digit++;
+					output.push_back(tmp);
+					continue;
+				}
+			}
+			if (input[i] == L'=')
+			{
+				if ((i + 1) < input.length() && input[i + 1] == L'=')
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					tmp.token.push_back(input[i + 1]);
+					i += 2;
+					digit += 2;
+					output.push_back(tmp);
+					continue;
+				}
+				else
+				{
+					tmp.filename = filename;
+					tmp.token.push_back(input[i]);
+					i++;
+					digit++;
+					output.push_back(tmp);
+					continue;
+				}
 			}
 			if (input[i] == L';')	//comment
 			{
@@ -237,8 +403,7 @@ public:
 				}
 				continue;
 			}
-			
-			if (input[i] == L'\'' && false)	//single quote (unused)
+			if (input[i] == L'\'')	//single quote
 			{
 				tmp.filename = filename;
 				tmp.line = line;
@@ -451,7 +616,7 @@ public:
 				output.push_back(tmp);
 				continue;
 			}
-			if (input[i] == L'\"' && false)	//double quote (unused)
+			if (input[i] == L'\"')	//double quote
 			{
 				tmp.filename = filename;
 				tmp.line = line;
@@ -672,7 +837,7 @@ public:
 			}
 			if (input[i] == L'\r')	//return
 			{
-				if ((i + 1) <= input.length() && input[i + 1] == L'\n')
+				if ((i + 1) < input.length() && input[i + 1] == L'\n')
 				{
 					i += 2;
 					digit = 1;
@@ -901,8 +1066,71 @@ public:
 		return output;
 	}
 
-	static int64_t evalExpression() {
+	static int64_t parse_terminal(list<Token> input, list<Token>::iterator i, instructions insts) {
+		list<Token>::iterator j = peekToken(input, i);
+		int64_t value = 0;
+		if (j == i)
+		{
+			throw runtime_error("Unexpected end of file");
+		}
+		if ((*i).token == L"(")
+		{
+			getToken(input, i);
+			value = parse(input, i, insts, parse_terminal(input, i, insts));
+			if ((*i).token != L")")
+			{
+				throw runtime_error("Right parenthesis missing");
+			}
+			getToken(input, i);
+		}
+		else if ((*i).token == L"-")
+		{
+			getToken(input, i);
+			value -= parse(input, i, insts, parse_terminal(input, i, insts), 13);
+		}
+		else if ((*i).token == L"+")
+		{
+			getToken(input, i);
+			value += parse(input, i, insts, parse_terminal(input, i, insts), 13);
+		}
+		else
+		{
+			value = toNumber((*i).token, insts);
+		}
+		return value;
+	}
 
+	static int64_t parse(list<Token> input, list<Token>::iterator i, instructions insts, int64_t lhs, int64_t precedence = 0) {
+		list<Token>::iterator j = peekToken(input, i);
+		while (j != i && insts.inst.find((*j).token)->second.itype == instructionType::$operator && insts.inst.find((*j).token)->second.value >= precedence)
+		{
+			Token op = *j;
+			getToken(input, i);
+			int64_t rhs = parse_terminal(input, i, insts);
+			j = peekToken(input, i);
+			if (j == i)
+			{
+				throw runtime_error("Unexpected end of file");
+			}
+			while ((insts.inst.find(op.token)->second.value < insts.inst.find((*j).token)->second.value) || (insts.inst.find((*j).token)->second.atype == associativity::right_associative && (insts.inst.find(op.token)->second.value == insts.inst.find((*j).token)->second.value)))
+			{
+				rhs = parse(input, i, insts, rhs, insts.inst.find((*j).token)->second.value + 1);
+				j = peekToken(input, i);
+				if (j == i)
+				{
+					throw runtime_error("Unexpected end of file");
+				}
+			}
+			if (op.token == L"+")
+			{
+				lhs += rhs;
+			}
+			else if (op.token == L"-")
+			{
+				lhs -= rhs;
+			}
+		}
+		return lhs;
 	}
 
 	static vector<bool> Parser(list<Token> input) {
@@ -962,28 +1190,24 @@ public:
 				}
 				else if (j->second.itype == instructionType::directive)
 				{
-					if (j->first == L"binclude")
+					if (j->first == L"binclude")	//format: binclude filename [filesize] [fileoffset]
 					{
+						i++;
+						wstring filepath = (*i).token;
+						size_t filesize = 0, fileoffset = 0;
 
+						basic_ifstream<char> ifs;
+						ifs.open(filepath, ios_base::binary | ios_base::in);
+						if (ifs.fail())
+						{
+							throw runtime_error("failed to open file");
+						}
+						istreambuf_iterator<char> ifsbegin(ifs), ifsend;
+						string finput(ifsbegin, ifsend);
+						
+						ifs.close();
 					}
 				}
-				else if ((*i).token == L"binclude")	//format: binclude filename,[filesize],[fileoffset]
-				{
-					i++;
-					wstring filepath = (*i).token;
-					basic_ifstream<char> ifs;
-					ifs.open(filepath, ios_base::binary | ios_base::in);
-					if (ifs.fail())
-					{
-						throw runtime_error("failed to open file");
-					}
-					istreambuf_iterator<char> ifsbegin(ifs), ifsend;
-					string finput(ifsbegin, ifsend);
-					ifs.close();
-
-
-				}
-				
 			}
 			i++;
 		}
