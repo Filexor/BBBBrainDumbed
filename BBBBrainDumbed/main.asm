@@ -45,3 +45,4 @@ ld4 ld2 ld0 ld0 ;loop addr
 mtp
 ;end: 93
 nop
+define test 1+2*3

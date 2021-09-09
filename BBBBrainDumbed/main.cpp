@@ -206,8 +206,8 @@ public:
 	bool C = false, M = false, IRQ = false;
 	Memory memory;
 
-	static list<Token> Tokenizer(wstring input, wstring filename) {
-		list<Token> output;
+	static list<Token>* Tokenizer(wstring input, wstring filename) {
+		list<Token>* output = new list<Token>();
 		basic_string<wchar_t>::size_type i = 0;
 		basic_string<wchar_t>::size_type line = 1;
 		basic_string<wchar_t>::size_type digit = 1;
@@ -224,7 +224,7 @@ public:
 				tmp.token.push_back(input[i]);
 				i++;
 				digit++;
-				output.push_back(tmp);
+				output->push_back(tmp);
 				continue;
 			}
 			if (input[i] == L'<')
@@ -236,7 +236,7 @@ public:
 					tmp.token.push_back(input[i + 1]);
 					i += 2;
 					digit += 2;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 				else
@@ -245,7 +245,7 @@ public:
 					tmp.token.push_back(input[i]);
 					i++;
 					digit++;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 			}
@@ -259,7 +259,7 @@ public:
 					tmp.token.push_back(input[i + 2]);
 					i += 3;
 					digit += 3;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 				else if ((i + 1) < input.length() && (input[i + 1] == L'>' || input[i + 1] == L'='))
@@ -269,7 +269,7 @@ public:
 					tmp.token.push_back(input[i + 1]);
 					i += 2;
 					digit += 2;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 				else
@@ -278,7 +278,7 @@ public:
 					tmp.token.push_back(input[i]);
 					i++;
 					digit++;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 			}
@@ -291,7 +291,7 @@ public:
 					tmp.token.push_back(input[i + 1]);
 					i += 2;
 					digit += 2;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 				else
@@ -300,7 +300,7 @@ public:
 					tmp.token.push_back(input[i]);
 					i++;
 					digit++;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 			}
@@ -313,7 +313,7 @@ public:
 					tmp.token.push_back(input[i + 1]);
 					i += 2;
 					digit += 2;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 				else
@@ -322,7 +322,7 @@ public:
 					tmp.token.push_back(input[i]);
 					i++;
 					digit++;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 			}
@@ -335,7 +335,7 @@ public:
 					tmp.token.push_back(input[i + 1]);
 					i += 2;
 					digit += 2;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 				else
@@ -344,7 +344,7 @@ public:
 					tmp.token.push_back(input[i]);
 					i++;
 					digit++;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 			}
@@ -357,7 +357,7 @@ public:
 					tmp.token.push_back(input[i + 1]);
 					i += 2;
 					digit += 2;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 				else
@@ -366,7 +366,7 @@ public:
 					tmp.token.push_back(input[i]);
 					i++;
 					digit++;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 			}
@@ -379,7 +379,7 @@ public:
 					tmp.token.push_back(input[i + 1]);
 					i += 2;
 					digit += 2;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 				else
@@ -388,7 +388,7 @@ public:
 					tmp.token.push_back(input[i]);
 					i++;
 					digit++;
-					output.push_back(tmp);
+					output->push_back(tmp);
 					continue;
 				}
 			}
@@ -613,7 +613,7 @@ public:
 					i++;
 					digit++;
 				}
-				output.push_back(tmp);
+				output->push_back(tmp);
 				continue;
 			}
 			if (input[i] == L'\"')	//double quote
@@ -826,7 +826,7 @@ public:
 					i++;
 					digit++;
 				}
-				output.push_back(tmp);
+				output->push_back(tmp);
 				continue;
 			}
 			if (input[i] == L' ' || input[i] == L'\t')	//space and tab
@@ -864,13 +864,13 @@ public:
 				tmp.filename = filename;
 				tmp.line = line;
 				tmp.digit = digit;
-				while (i < input.length() && input[i] != L' ' && input[i] != L'\r' && input[i] != L'\n' && input[i] != L'\0' && input[i] != L'\t')	//not separator
+				while (i < input.length() && input[i] != L' ' && input[i] != L'\r' && input[i] != L'\n' && input[i] != L'\0' && input[i] != L'\t' && input[i] != L'+' && input[i] != L'-' && input[i] != L'*' && input[i] != L'/' && input[i] != L'%' && input[i] != L'|' && input[i] != L'&' && input[i] != L'^' && input[i] != L'~' && input[i] != L'<' && input[i] != L'>' && input[i] != L'!' && input[i] != L'=' && input[i] != L',')	//not separator nor operand
 				{
 					tmp.token.push_back(input[i]);
 					i++;
 					digit++;
 				}
-				output.push_back(tmp);
+				output->push_back(tmp);
 				continue;
 			}
 		}
@@ -977,12 +977,12 @@ public:
 		return 0;
 	}
 
-	static list<Token>::iterator peekToken(list<Token> input, list<Token>::iterator i) {
-		auto j = ++i;
-		--i;
-		if (j == input.end())
+	static list<Token>::iterator peekToken(list<Token>* input, list<Token>::iterator* i) {
+		auto j = ++(*i);
+		--(*i);
+		if (j == input->end())
 		{
-			return i;
+			return *i;
 		}
 		else
 		{
@@ -990,11 +990,11 @@ public:
 		}
 	}
 
-	static list<Token>::iterator getToken(list<Token> input, list<Token>::iterator i) {
-		auto j = ++i;
-		if (j == input.end())
+	static list<Token>::iterator getToken(list<Token>* input, list<Token>::iterator* i) {
+		auto j = ++(*i);
+		if (j == input->end())
 		{
-			return i;
+			return *i;
 		}
 		else
 		{
@@ -1002,7 +1002,7 @@ public:
 		}
 	}
 
-	static vector<wstring> parseExpression(list<Token> input, list<Token>::iterator i, instructions insts) {
+	/*static vector<wstring> parseExpression(list<Token> input, list<Token>::iterator i, instructions insts) {
 		vector<wstring> lifo;
 		vector<wstring> output;
 		while (peekToken(input, i) != i && peekToken(input, i)->token != L",")
@@ -1064,59 +1064,65 @@ public:
 			lifo.pop_back();
 		}
 		return output;
-	}
+	}*/
 
-	static int64_t parse_terminal(list<Token> input, list<Token>::iterator i, instructions insts) {
-		list<Token>::iterator j = peekToken(input, i);
+	static int64_t parse_terminal(list<Token>* input, list<Token>::iterator* i, instructions insts) {
+
 		int64_t value = 0;
-		if (j == i)
-		{
-			throw runtime_error("Unexpected end of file");
-		}
-		if ((*i).token == L"(")
+		if ((*i)->token == L"(")
 		{
 			getToken(input, i);
 			value = parse(input, i, insts, parse_terminal(input, i, insts));
-			if ((*i).token != L")")
+			if ((*i)->token != L")")
 			{
 				throw runtime_error("Right parenthesis missing");
 			}
 			getToken(input, i);
 		}
-		else if ((*i).token == L"-")
+		else if ((*i)->token == L"-")
 		{
 			getToken(input, i);
-			value -= parse(input, i, insts, parse_terminal(input, i, insts), 13);
+			value -= parse_terminal(input, i, insts);
 		}
-		else if ((*i).token == L"+")
+		else if ((*i)->token == L"+")
 		{
 			getToken(input, i);
-			value += parse(input, i, insts, parse_terminal(input, i, insts), 13);
+			value += parse_terminal(input, i, insts);
+		}
+		else if ((*i)->token == L"~")
+		{
+			getToken(input, i);
+			value = ~parse_terminal(input, i, insts);
+		}
+		else if ((*i)->token == L"!")
+		{
+			getToken(input, i);
+			value = !parse_terminal(input, i, insts);
 		}
 		else
 		{
-			value = toNumber((*i).token, insts);
+			value = toNumber((*i)->token, insts);
 		}
 		return value;
 	}
 
-	static int64_t parse(list<Token> input, list<Token>::iterator i, instructions insts, int64_t lhs, int64_t precedence = 0) {
+	static int64_t parse(list<Token>* input, list<Token>::iterator* i, instructions insts, int64_t lhs, int64_t precedence = 0) {
 		list<Token>::iterator j = peekToken(input, i);
-		while (j != i && insts.inst.find((*j).token)->second.itype == instructionType::$operator && insts.inst.find((*j).token)->second.value >= precedence)
+		while ((j) != (*i) && insts.inst.find((j)->token)->second.itype == instructionType::$operator && insts.inst.find((j)->token)->second.value >= precedence)
 		{
 			Token op = *j;
 			getToken(input, i);
 			int64_t rhs = parse_terminal(input, i, insts);
 			j = peekToken(input, i);
-			if (j == i)
+			if (j == *i)
 			{
 				throw runtime_error("Unexpected end of file");
 			}
-			while ((insts.inst.find(op.token)->second.value < insts.inst.find((*j).token)->second.value) || (insts.inst.find((*j).token)->second.atype == associativity::right_associative && (insts.inst.find(op.token)->second.value == insts.inst.find((*j).token)->second.value)))
+			while ((insts.inst.find(op.token)->second.value < insts.inst.find((j)->token)->second.value) || (insts.inst.find((j)->token)->second.atype == associativity::right_associative && (insts.inst.find(op.token)->second.value == insts.inst.find((j)->token)->second.value)))
 			{
-				rhs = parse(input, i, insts, rhs, insts.inst.find((*j).token)->second.value + 1);
+				rhs = parse(input, i, insts, rhs, insts.inst.find(op.token)->second.value + 1);
 				j = peekToken(input, i);
-				if (j == i)
+				if (j == *i)
 				{
 					throw runtime_error("Unexpected end of file");
 				}
@@ -1129,16 +1135,88 @@ public:
 			{
 				lhs -= rhs;
 			}
+			else if (op.token == L"*")
+			{
+				lhs *= rhs;
+			}
+			else if (op.token == L"/")
+			{
+				lhs /= rhs;
+			}
+			else if (op.token == L"%")
+			{
+				lhs %= rhs;
+			}
+			else if (op.token == L"|")
+			{
+				lhs |= rhs;
+			}
+			else if (op.token == L"&")
+			{
+				lhs &= rhs;
+			}
+			else if (op.token == L"^")
+			{
+				lhs ^= rhs;
+			}
+			else if (op.token == L"<<")
+			{
+				lhs = lhs << rhs;
+			}
+			else if (op.token == L">>")
+			{
+				lhs = ((uint64_t)lhs) >> rhs;
+			}
+			else if (op.token == L">>>")
+			{
+				lhs = ((int64_t)lhs) >> rhs;
+			}
+			else if (op.token == L"||")
+			{
+				lhs = (lhs != 0) || (rhs != 0);
+			}
+			else if (op.token == L"&&")
+			{
+				lhs = (lhs != 0) && (rhs != 0);
+			}
+			else if (op.token == L"^^")
+			{
+				lhs = (lhs != 0) != (rhs != 0);
+			}
+			else if (op.token == L"<")
+			{
+				lhs = lhs < rhs;
+			}
+			else if (op.token == L">")
+			{
+				lhs = lhs > rhs;
+			}
+			else if (op.token == L"<=")
+			{
+				lhs = lhs <= rhs;
+			}
+			else if (op.token == L">=")
+			{
+				lhs = lhs >= rhs;
+			}
+			else if (op.token == L"!=")
+			{
+				lhs = lhs != rhs;;
+			}
+			else if (op.token == L"==")
+			{
+				lhs = lhs == rhs;
+			}
 		}
 		return lhs;
 	}
 
-	static vector<bool> Parser(list<Token> input) {
+	static vector<bool> Parser(list<Token>* input) {
 		vector<bool> output;
 		map<list<Token>::iterator, wstring> labels;
-		list<Token>::iterator i = input.begin();
+		list<Token>::iterator i = input->begin();
 		instructions insts;
-		while (i != input.end())
+		while (i != input->end())
 		{
 			for (basic_string<wchar_t>::size_type j = 0; j < (*i).token.length(); j++)
 			{
@@ -1154,8 +1232,8 @@ public:
 			filesize:	;<- filesize need to know size of binclude which defined by filesize (self reference)
 		Dependency of label is all of previously appeared size-defining identifier
 		*/
-		i = input.begin();
-		while (i != input.end())
+		i = input->begin();
+		while (i != input->end())
 		{
 			auto j = insts.inst.find((*i).token);
 			if (j == insts.inst.end())
@@ -1206,6 +1284,18 @@ public:
 						string finput(ifsbegin, ifsend);
 						
 						ifs.close();
+					}
+					else if (j->first == L"define")
+					{
+						auto k = ++i;
+						if (i == input->end())
+						{
+							throw runtime_error("Unexpected end of file");
+						}
+						i++;
+						int64_t l = parse(input, &i, insts, parse_terminal(input, &i, insts));
+						insts.inst.insert(make_pair((*k).token, instruction(0, instructionType::knownnumber, l)));
+
 					}
 				}
 			}
@@ -1755,6 +1845,7 @@ int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
 	if (argc >= 2)
 	{
 		ifs.open(argv[1]);
+		filepath = argv[1];
 		if (ifs.fail())
 		{
 			return 2;
@@ -1768,8 +1859,8 @@ int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
 	istreambuf_iterator<wchar_t> ifsbegin(ifs), ifsend;
 	wstring finput(ifsbegin,ifsend);
 	ifs.close();
-	list<Token> tokens = BBBBrainDumbed::Tokenizer(finput, filepath);
-	BBBBrainDumbed::CheckTokenError(tokens);
+	list<Token>* tokens = BBBBrainDumbed::Tokenizer(finput, filepath);
+	BBBBrainDumbed::CheckTokenError(*tokens);
 	vector<bool> ROM = BBBBrainDumbed::Parser(tokens);
 	BBBBrainDumbed b;
 	b.memory.BakeRom(ROM);
