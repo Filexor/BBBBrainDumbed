@@ -1002,69 +1002,27 @@ public:
 		}
 	}
 
-	/*static vector<wstring> parseExpression(list<Token> input, list<Token>::iterator i, instructions insts) {
-		vector<wstring> lifo;
-		vector<wstring> output;
-		while (peekToken(input, i) != i && peekToken(input, i)->token != L",")
+	static bool checkPrevToken(list<Token>* input, list<Token>::iterator* i, instructions insts) {
+		bool output = false;
+		if ((*i) == input->begin())
 		{
-			i++;
-			if (hasNumber(i->token, insts))
-			{
-				output.push_back(i->token);
-			}
-			else if (insts.inst.find(i->token)->second.itype == instructionType::$operator)
-			{
-				while (lifo.size() > 0)
-				{
-					if (insts.inst.find(lifo.back())->second.itype == instructionType::$operator && (((insts.inst.find(i->token)->second.atype == associativity::left_associative) && (insts.inst.find(i->token)->second.value <= insts.inst.find(lifo.back())->second.value)) || (insts.inst.find(i->token)->second.value < insts.inst.find(lifo.back())->second.value)))
-					{
-						output.push_back(lifo.back());
-						lifo.pop_back();
-					}
-					else
-					{
-						break;
-					}
-				}
-			}
-			else if (i->token == L"(")
-			{
-				lifo.push_back(i->token);
-			}
-			else if (i->token == L")")
-			{
-				bool pe = false;
-				while (lifo.size() > 0)
-				{
-					if (lifo.back() == L"(")
-					{
-						lifo.pop_back();
-						pe = true;
-						break;
-					}
-					else
-					{
-						output.push_back(lifo.back());
-						lifo.pop_back();
-					}
-				}
-				if (!pe)
-				{
-					throw runtime_error("parenthesis mismatch");
-				}
-			}
+			return true;
 		}
-		while (lifo.size() > 0)
+		--(*i);
+		//TODO: detect number
+		auto j = insts.inst.find((*i)->token);
+		if (j != insts.inst.end() && j->second.itype == instructionType::$operator)
 		{
-			if (lifo.back() == L"(" || lifo.back() == L")")
-			{
-				throw runtime_error("parenthesis mismatch");
-			}
-			output.push_back(lifo.back());
-			lifo.pop_back();
+			output = true;
 		}
+		if ((*i)->token == L")")
+		{
+			output = true;
+		}
+		++(*i);
 		return output;
-	}*/
+
+	}
 
 	static int64_t parse_terminal(list<Token>* input, list<Token>::iterator* i, instructions insts) {
 
@@ -1079,29 +1037,33 @@ public:
 			}
 			getToken(input, i);
 		}
-		else if ((*i)->token == L"-")
+		else if ((*i)->token == L"-" && checkPrevToken(input, i, insts))	//unary minus if previous token does not exist or is operator or right parenthesis
 		{
 			getToken(input, i);
 			value -= parse_terminal(input, i, insts);
 		}
-		else if ((*i)->token == L"+")
+		else if ((*i)->token == L"+" && checkPrevToken(input, i, insts))
 		{
 			getToken(input, i);
 			value += parse_terminal(input, i, insts);
 		}
-		else if ((*i)->token == L"~")
+		else if ((*i)->token == L"~" && checkPrevToken(input, i, insts))
 		{
 			getToken(input, i);
 			value = ~parse_terminal(input, i, insts);
 		}
-		else if ((*i)->token == L"!")
+		else if ((*i)->token == L"!" && checkPrevToken(input, i, insts))
 		{
 			getToken(input, i);
 			value = !parse_terminal(input, i, insts);
 		}
-		else
+		else if (hasNumber((*i)->token, insts))
 		{
 			value = toNumber((*i)->token, insts);
+		}
+		else
+		{
+			
 		}
 		return value;
 	}
@@ -1112,20 +1074,13 @@ public:
 		{
 			Token op = *j;
 			getToken(input, i);
+			getToken(input, i);
 			int64_t rhs = parse_terminal(input, i, insts);
 			j = peekToken(input, i);
-			if (j == *i)
-			{
-				throw runtime_error("Unexpected end of file");
-			}
-			while ((insts.inst.find(op.token)->second.value < insts.inst.find((j)->token)->second.value) || (insts.inst.find((j)->token)->second.atype == associativity::right_associative && (insts.inst.find(op.token)->second.value == insts.inst.find((j)->token)->second.value)))
+			while ((j != *i) && ((insts.inst.find(op.token)->second.value < insts.inst.find((j)->token)->second.value) || (insts.inst.find((j)->token)->second.atype == associativity::right_associative && (insts.inst.find(op.token)->second.value == insts.inst.find((j)->token)->second.value))))
 			{
 				rhs = parse(input, i, insts, rhs, insts.inst.find(op.token)->second.value + 1);
 				j = peekToken(input, i);
-				if (j == *i)
-				{
-					throw runtime_error("Unexpected end of file");
-				}
 			}
 			if (op.token == L"+")
 			{
