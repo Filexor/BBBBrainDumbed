@@ -864,7 +864,7 @@ public:
 				tmp.filename = filename;
 				tmp.line = line;
 				tmp.digit = digit;
-				while (i < input.length() && input[i] != L' ' && input[i] != L'\r' && input[i] != L'\n' && input[i] != L'\0' && input[i] != L'\t' && input[i] != L'+' && input[i] != L'-' && input[i] != L'*' && input[i] != L'/' && input[i] != L'%' && input[i] != L'|' && input[i] != L'&' && input[i] != L'^' && input[i] != L'~' && input[i] != L'<' && input[i] != L'>' && input[i] != L'!' && input[i] != L'=' && input[i] != L',')	//not separator nor operand
+				while (i < input.length() && input[i] != L' ' && input[i] != L'\r' && input[i] != L'\n' && input[i] != L'\0' && input[i] != L'\t' && input[i] != L'+' && input[i] != L'-' && input[i] != L'*' && input[i] != L'/' && input[i] != L'%' && input[i] != L'|' && input[i] != L'&' && input[i] != L'^' && input[i] != L'~' && input[i] != L'<' && input[i] != L'>' && input[i] != L'!' && input[i] != L'=' && input[i] != L',' && input[i] != L'(' && input[i] != L')')	//not separator nor operand
 				{
 					tmp.token.push_back(input[i]);
 					i++;
@@ -1031,11 +1031,11 @@ public:
 		{
 			getToken(input, i);
 			value = parse(input, i, insts, parse_terminal(input, i, insts));
+			getToken(input, i);
 			if ((*i)->token != L")")
 			{
 				throw runtime_error("Right parenthesis missing");
 			}
-			getToken(input, i);
 		}
 		else if ((*i)->token == L"-" && checkPrevToken(input, i, insts))	//unary minus if previous token does not exist or is operator or right parenthesis
 		{
@@ -1070,14 +1070,14 @@ public:
 
 	static int64_t parse(list<Token>* input, list<Token>::iterator* i, instructions insts, int64_t lhs, int64_t precedence = 0) {
 		list<Token>::iterator j = peekToken(input, i);
-		while ((j) != (*i) && insts.inst.find((j)->token)->second.itype == instructionType::$operator && insts.inst.find((j)->token)->second.value >= precedence)
+		while ((j) != (*i) && (j->token != L")") && insts.inst.find((j)->token)->second.itype == instructionType::$operator && insts.inst.find((j)->token)->second.value >= precedence)
 		{
 			Token op = *j;
 			getToken(input, i);
 			getToken(input, i);
 			int64_t rhs = parse_terminal(input, i, insts);
 			j = peekToken(input, i);
-			while ((j != *i) && ((insts.inst.find(op.token)->second.value < insts.inst.find((j)->token)->second.value) || (insts.inst.find((j)->token)->second.atype == associativity::right_associative && (insts.inst.find(op.token)->second.value == insts.inst.find((j)->token)->second.value))))
+			while ((j != *i) && (j->token != L")") && ((insts.inst.find(op.token)->second.value < insts.inst.find((j)->token)->second.value) || (insts.inst.find((j)->token)->second.atype == associativity::right_associative && (insts.inst.find(op.token)->second.value == insts.inst.find((j)->token)->second.value))))
 			{
 				rhs = parse(input, i, insts, rhs, insts.inst.find(op.token)->second.value + 1);
 				j = peekToken(input, i);
