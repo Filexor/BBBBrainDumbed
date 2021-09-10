@@ -199,6 +199,14 @@ public:
 	basic_string<wchar_t>::size_type digit = 0;
 };
 
+class ParserError : public runtime_error {
+public:
+	Token token;
+	ParserError(string message, Token _token) :runtime_error(message) {
+		token = _token;
+	}
+};
+
 class BBBBrainDumbed {
 public:
 	uint16_t Z = 0, X = 0, Y = 0, A = 0, B = 0, D = 0, E = 0, P = 0, V = 0, T = 0;
@@ -1002,14 +1010,13 @@ public:
 		}
 	}
 
-	static bool checkPrevToken(list<Token>* input, list<Token>::iterator* i, instructions insts) {
+	static bool checkPrevToken(list<Token>* input, list<Token>::iterator* i, list<Token>::iterator begin, instructions insts) {
 		bool output = false;
-		if ((*i) == input->begin())
+		if ((*i) == begin)
 		{
 			return true;
 		}
 		--(*i);
-		//TODO: detect number
 		auto j = insts.inst.find((*i)->token);
 		if (j != insts.inst.end() && j->second.itype == instructionType::$operator)
 		{
@@ -1024,38 +1031,38 @@ public:
 
 	}
 
-	static int64_t parse_terminal(list<Token>* input, list<Token>::iterator* i, instructions insts) {
+	static int64_t parse_terminal(list<Token>* input, list<Token>::iterator* i, list<Token>::iterator begin, instructions insts) {
 
 		int64_t value = 0;
 		if ((*i)->token == L"(")
 		{
 			getToken(input, i);
-			value = parse(input, i, insts, parse_terminal(input, i, insts));
+			value = parse(input, i, begin, insts, parse_terminal(input, i, begin, insts));
 			getToken(input, i);
 			if ((*i)->token != L")")
 			{
 				throw runtime_error("Right parenthesis missing");
 			}
 		}
-		else if ((*i)->token == L"-" && checkPrevToken(input, i, insts))	//unary minus if previous token does not exist or is operator or right parenthesis
+		else if ((*i)->token == L"-" && checkPrevToken(input, i, begin, insts))	//unary minus if previous token does not exist or is operator or right parenthesis
 		{
 			getToken(input, i);
-			value -= parse_terminal(input, i, insts);
+			value -= parse_terminal(input, i, begin, insts);
 		}
-		else if ((*i)->token == L"+" && checkPrevToken(input, i, insts))
+		else if ((*i)->token == L"+" && checkPrevToken(input, i, begin, insts))
 		{
 			getToken(input, i);
-			value += parse_terminal(input, i, insts);
+			value += parse_terminal(input, i, begin, insts);
 		}
-		else if ((*i)->token == L"~" && checkPrevToken(input, i, insts))
+		else if ((*i)->token == L"~" && checkPrevToken(input, i, begin, insts))
 		{
 			getToken(input, i);
-			value = ~parse_terminal(input, i, insts);
+			value = ~parse_terminal(input, i, begin, insts);
 		}
-		else if ((*i)->token == L"!" && checkPrevToken(input, i, insts))
+		else if ((*i)->token == L"!" && checkPrevToken(input, i, begin, insts))
 		{
 			getToken(input, i);
-			value = !parse_terminal(input, i, insts);
+			value = !parse_terminal(input, i, begin, insts);
 		}
 		else if (hasNumber((*i)->token, insts))
 		{
@@ -1068,18 +1075,18 @@ public:
 		return value;
 	}
 
-	static int64_t parse(list<Token>* input, list<Token>::iterator* i, instructions insts, int64_t lhs, int64_t precedence = 0) {
+	static int64_t parse(list<Token>* input, list<Token>::iterator* i, list<Token>::iterator begin, instructions insts, int64_t lhs, int64_t precedence = 0) {
 		list<Token>::iterator j = peekToken(input, i);
 		while ((j) != (*i) && (j->token != L")") && insts.inst.find((j)->token)->second.itype == instructionType::$operator && insts.inst.find((j)->token)->second.value >= precedence)
 		{
 			Token op = *j;
 			getToken(input, i);
 			getToken(input, i);
-			int64_t rhs = parse_terminal(input, i, insts);
+			int64_t rhs = parse_terminal(input, i, begin, insts);
 			j = peekToken(input, i);
 			while ((j != *i) && (j->token != L")") && ((insts.inst.find(op.token)->second.value < insts.inst.find((j)->token)->second.value) || (insts.inst.find((j)->token)->second.atype == associativity::right_associative && (insts.inst.find(op.token)->second.value == insts.inst.find((j)->token)->second.value))))
 			{
-				rhs = parse(input, i, insts, rhs, insts.inst.find(op.token)->second.value + 1);
+				rhs = parse(input, i, begin, insts, rhs, insts.inst.find(op.token)->second.value + 1);
 				j = peekToken(input, i);
 			}
 			if (op.token == L"+")
@@ -1248,9 +1255,15 @@ public:
 							throw runtime_error("Unexpected end of file");
 						}
 						i++;
-						int64_t l = parse(input, &i, insts, parse_terminal(input, &i, insts));
-						insts.inst.insert(make_pair((*k).token, instruction(0, instructionType::knownnumber, l)));
-
+						int64_t l = parse(input, &i, i, insts, parse_terminal(input, &i, i, insts));
+						if (insts.inst.find((*k).token) == insts.inst.end() || insts.inst.find((*k).token)->second.itype == instructionType::knownnumber || insts.inst.find((*k).token)->second.itype == instructionType::unknownnumber)
+						{
+							insts.inst.insert_or_assign((*k).token, instruction(0, instructionType::knownnumber, l));
+						}
+						else
+						{
+							throw ParserError("keyword cannot be used", *k);
+						}
 					}
 				}
 			}
@@ -1816,7 +1829,21 @@ int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
 	ifs.close();
 	list<Token>* tokens = BBBBrainDumbed::Tokenizer(finput, filepath);
 	BBBBrainDumbed::CheckTokenError(*tokens);
-	vector<bool> ROM = BBBBrainDumbed::Parser(tokens);
+	vector<bool> ROM;
+	try
+	{
+		ROM = BBBBrainDumbed::Parser(tokens);
+	}
+	catch (const ParserError& e)
+	{
+		wcout << L"Parser error at file:" << e.token.filename << L" line:" << e.token.line << L" digit:" << e.token.digit << endl << e.what() << endl;
+		return 3;
+	}
+	catch (const runtime_error& e)
+	{
+		wcout << L"Parser error\n" << e.what() << endl;
+		return 4;
+	}
 	BBBBrainDumbed b;
 	b.memory.BakeRom(ROM);
 	b.Z = 12345;
