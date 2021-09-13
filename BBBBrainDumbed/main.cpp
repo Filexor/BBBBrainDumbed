@@ -7,6 +7,7 @@
 #include<map>
 #include<fstream>
 #include<exception>
+#include<tuple>
 
 #include<Windows.h>
 
@@ -922,61 +923,66 @@ public:
 		return true;
 	}
 
-	static int64_t toNumber(wstring input, instructions insts) {
-		auto i = insts.inst.find(input);
+	static int64_t toNumber(list<Token>::iterator* input, instructions insts, bool allowUnknown) {
+		auto j = (*input)->token;
+		auto i = insts.inst.find(j);
 		if (i != insts.inst.end())
 		{
-			if (i->second.itype == instructionType::knownnumber || i->second.itype == instructionType::$operator)
+			if (i->second.itype == instructionType::knownnumber)
 			{
 				return i->second.value;
+			}
+			else if (i->second.itype == instructionType::unknownnumber && allowUnknown)
+			{
+				return 0;
 			}
 			else
 			{
 				throw runtime_error("unresolved value");
 			}
 		}
-		else if (input[0] == L'0')
+		else if (j[0] == L'0')
 		{
-			if (input[1] == L'b')
+			if (j[1] == L'b')
 			{
-				input.erase(0, 2);
-				return stoll(input, nullptr, 2);
+				j.erase(0, 2);
+				return stoll(j, nullptr, 2);
 			}
-			else if (input[1] == L'q')
+			else if (j[1] == L'q')
 			{
-				input.erase(0, 2);
-				return stoll(input, nullptr, 4);
+				j.erase(0, 2);
+				return stoll(j, nullptr, 4);
 			}
-			else if (input[1] == L'o')
+			else if (j[1] == L'o')
 			{
-				input.erase(0, 2);
-				return stoll(input, nullptr, 8);
+				j.erase(0, 2);
+				return stoll(j, nullptr, 8);
 			}
-			else if (input[1] == L'd')
+			else if (j[1] == L'd')
 			{
-				input.erase(0, 2);
-				return stoll(input, nullptr, 10);
+				j.erase(0, 2);
+				return stoll(j, nullptr, 10);
 			}
-			else if (input[1] == L'x')
+			else if (j[1] == L'x')
 			{
-				input.erase(0, 2);
-				return stoll(input, nullptr, 16);
+				j.erase(0, 2);
+				return stoll(j, nullptr, 16);
 			}
 			else
 			{
-				return stoll(input, nullptr, 0);
+				return stoll(j, nullptr, 0);
 			}
 		}
-		else if (input[0] >= L'1' && input[0] <= L'9')
+		else if (j[0] >= L'1' && j[0] <= L'9')
 		{
-			return stoll(input, nullptr, 10);
+			return stoll(j, nullptr, 10);
 		}
-		else if ((input[0] == L'\"' && input.back() == L'\"') || (input[0] == L'\'' && input.back() == L'\''))
+		else if ((j[0] == L'\"' && j.back() == L'\"') || (j[0] == L'\'' && j.back() == L'\''))
 		{
-			input.erase(0, 1);
-			input.erase(input.size() - 1, 1);
-			input.resize(sizeof(wchar_t) * 4, 0);
-			return (int64_t)*input.c_str();
+			j.erase(0, 1);
+			j.erase(j.size() - 1, 1);
+			j.resize(sizeof(wchar_t) * 4, 0);
+			return (int64_t)*j.c_str();
 		}
 		else
 		{
@@ -1031,42 +1037,46 @@ public:
 
 	}
 
-	static int64_t parse_terminal(list<Token>* input, list<Token>::iterator* i, list<Token>::iterator begin, instructions insts) {
+	static int64_t parse_terminal(list<Token>* input, list<Token>::iterator* i, list<Token>::iterator begin, instructions insts, bool allowUnknown) {
 
 		int64_t value = 0;
 		if ((*i)->token == L"(")
 		{
 			getToken(input, i);
-			value = parse(input, i, begin, insts, parse_terminal(input, i, begin, insts));
+			value = parse(input, i, begin, insts, parse_terminal(input, i, begin, insts, allowUnknown), 0, allowUnknown);
 			getToken(input, i);
 			if ((*i)->token != L")")
 			{
 				throw runtime_error("Right parenthesis missing");
 			}
 		}
-		else if ((*i)->token == L"-" && checkPrevToken(input, i, begin, insts))	//unary minus if previous token does not exist or is operator or right parenthesis
+		else if ((*i)->token == L"-" && checkPrevToken(input, i, begin, insts) && !allowUnknown)	//unary minus if previous token does not exist or is operator or right parenthesis
 		{
 			getToken(input, i);
-			value -= parse_terminal(input, i, begin, insts);
+			value -= parse_terminal(input, i, begin, insts, allowUnknown);
 		}
-		else if ((*i)->token == L"+" && checkPrevToken(input, i, begin, insts))
+		else if ((*i)->token == L"+" && checkPrevToken(input, i, begin, insts) && !allowUnknown)
 		{
 			getToken(input, i);
-			value += parse_terminal(input, i, begin, insts);
+			value += parse_terminal(input, i, begin, insts, allowUnknown);
 		}
-		else if ((*i)->token == L"~" && checkPrevToken(input, i, begin, insts))
+		else if ((*i)->token == L"~" && checkPrevToken(input, i, begin, insts) && !allowUnknown)
 		{
 			getToken(input, i);
-			value = ~parse_terminal(input, i, begin, insts);
+			value = ~parse_terminal(input, i, begin, insts, allowUnknown);
 		}
-		else if ((*i)->token == L"!" && checkPrevToken(input, i, begin, insts))
+		else if ((*i)->token == L"!" && checkPrevToken(input, i, begin, insts) && !allowUnknown)
 		{
 			getToken(input, i);
-			value = !parse_terminal(input, i, begin, insts);
+			value = !parse_terminal(input, i, begin, insts, allowUnknown);
 		}
 		else if (hasNumber((*i)->token, insts))
 		{
-			value = toNumber((*i)->token, insts);
+			value = toNumber(i, insts, allowUnknown);
+		}
+		else if (allowUnknown)
+		{
+			getToken(input, i);
 		}
 		else
 		{
@@ -1075,99 +1085,102 @@ public:
 		return value;
 	}
 
-	static int64_t parse(list<Token>* input, list<Token>::iterator* i, list<Token>::iterator begin, instructions insts, int64_t lhs, int64_t precedence = 0) {
+	static int64_t parse(list<Token>* input, list<Token>::iterator* i, list<Token>::iterator begin, instructions insts, int64_t lhs, int64_t precedence, bool allowUnknown) {
 		list<Token>::iterator j = peekToken(input, i);
 		while ((j) != (*i) && (j->token != L")") && insts.inst.find((j)->token)->second.itype == instructionType::$operator && insts.inst.find((j)->token)->second.value >= precedence)
 		{
 			Token op = *j;
 			getToken(input, i);
 			getToken(input, i);
-			int64_t rhs = parse_terminal(input, i, begin, insts);
+			int64_t rhs = parse_terminal(input, i, begin, insts, allowUnknown);
 			j = peekToken(input, i);
 			while ((j != *i) && (j->token != L")") && ((insts.inst.find(op.token)->second.value < insts.inst.find((j)->token)->second.value) || (insts.inst.find((j)->token)->second.atype == associativity::right_associative && (insts.inst.find(op.token)->second.value == insts.inst.find((j)->token)->second.value))))
 			{
-				rhs = parse(input, i, begin, insts, rhs, insts.inst.find(op.token)->second.value + 1);
+				rhs = parse(input, i, begin, insts, rhs, insts.inst.find(op.token)->second.value + 1, allowUnknown);
 				j = peekToken(input, i);
 			}
-			if (op.token == L"+")
+			if (!allowUnknown)
 			{
-				lhs += rhs;
-			}
-			else if (op.token == L"-")
-			{
-				lhs -= rhs;
-			}
-			else if (op.token == L"*")
-			{
-				lhs *= rhs;
-			}
-			else if (op.token == L"/")
-			{
-				lhs /= rhs;
-			}
-			else if (op.token == L"%")
-			{
-				lhs %= rhs;
-			}
-			else if (op.token == L"|")
-			{
-				lhs |= rhs;
-			}
-			else if (op.token == L"&")
-			{
-				lhs &= rhs;
-			}
-			else if (op.token == L"^")
-			{
-				lhs ^= rhs;
-			}
-			else if (op.token == L"<<")
-			{
-				lhs = lhs << rhs;
-			}
-			else if (op.token == L">>")
-			{
-				lhs = ((uint64_t)lhs) >> rhs;
-			}
-			else if (op.token == L">>>")
-			{
-				lhs = ((int64_t)lhs) >> rhs;
-			}
-			else if (op.token == L"||")
-			{
-				lhs = (lhs != 0) || (rhs != 0);
-			}
-			else if (op.token == L"&&")
-			{
-				lhs = (lhs != 0) && (rhs != 0);
-			}
-			else if (op.token == L"^^")
-			{
-				lhs = (lhs != 0) != (rhs != 0);
-			}
-			else if (op.token == L"<")
-			{
-				lhs = lhs < rhs;
-			}
-			else if (op.token == L">")
-			{
-				lhs = lhs > rhs;
-			}
-			else if (op.token == L"<=")
-			{
-				lhs = lhs <= rhs;
-			}
-			else if (op.token == L">=")
-			{
-				lhs = lhs >= rhs;
-			}
-			else if (op.token == L"!=")
-			{
-				lhs = lhs != rhs;;
-			}
-			else if (op.token == L"==")
-			{
-				lhs = lhs == rhs;
+				if (op.token == L"+")
+				{
+					lhs += rhs;
+				}
+				else if (op.token == L"-")
+				{
+					lhs -= rhs;
+				}
+				else if (op.token == L"*")
+				{
+					lhs *= rhs;
+				}
+				else if (op.token == L"/")
+				{
+					lhs /= rhs;
+				}
+				else if (op.token == L"%")
+				{
+					lhs %= rhs;
+				}
+				else if (op.token == L"|")
+				{
+					lhs |= rhs;
+				}
+				else if (op.token == L"&")
+				{
+					lhs &= rhs;
+				}
+				else if (op.token == L"^")
+				{
+					lhs ^= rhs;
+				}
+				else if (op.token == L"<<")
+				{
+					lhs = lhs << rhs;
+				}
+				else if (op.token == L">>")
+				{
+					lhs = ((uint64_t)lhs) >> rhs;
+				}
+				else if (op.token == L">>>")
+				{
+					lhs = ((int64_t)lhs) >> rhs;
+				}
+				else if (op.token == L"||")
+				{
+					lhs = (lhs != 0) || (rhs != 0);
+				}
+				else if (op.token == L"&&")
+				{
+					lhs = (lhs != 0) && (rhs != 0);
+				}
+				else if (op.token == L"^^")
+				{
+					lhs = (lhs != 0) != (rhs != 0);
+				}
+				else if (op.token == L"<")
+				{
+					lhs = lhs < rhs;
+				}
+				else if (op.token == L">")
+				{
+					lhs = lhs > rhs;
+				}
+				else if (op.token == L"<=")
+				{
+					lhs = lhs <= rhs;
+				}
+				else if (op.token == L">=")
+				{
+					lhs = lhs >= rhs;
+				}
+				else if (op.token == L"!=")
+				{
+					lhs = lhs != rhs;;
+				}
+				else if (op.token == L"==")
+				{
+					lhs = lhs == rhs;
+				}
 			}
 		}
 		return lhs;
@@ -1175,7 +1188,7 @@ public:
 
 	static vector<bool> Parser(list<Token>* input) {
 		vector<bool> output;
-		map<list<Token>::iterator, wstring> labels;
+		vector<pair<size_t, list<Token>::iterator>> TBR;	//to be resolved. <binary position, directive>
 		list<Token>::iterator i = input->begin();
 		instructions insts;
 		while (i != input->end())
@@ -1204,15 +1217,7 @@ public:
 				{
 					wstring l = (*i).token;
 					l.pop_back();
-					auto k = insts.inst.find(l);
-					if (k == insts.inst.end())
-					{
-						insts.inst.insert(make_pair(l, instruction(0, instructionType::unknownnumber, 0)));
-					}
-					else
-					{
-						throw runtime_error("multiple labels with same identifier found");
-					}
+					insts.inst.insert_or_assign(l, instruction(0, instructionType::knownnumber, output.size()));
 				}
 				else	//identifier
 				{
@@ -1235,17 +1240,18 @@ public:
 						i++;
 						wstring filepath = (*i).token;
 						size_t filesize = 0, fileoffset = 0;
-
 						basic_ifstream<char> ifs;
 						ifs.open(filepath, ios_base::binary | ios_base::in);
 						if (ifs.fail())
 						{
-							throw runtime_error("failed to open file");
+							throw ParserError("failed to open file", *i);
 						}
 						istreambuf_iterator<char> ifsbegin(ifs), ifsend;
 						string finput(ifsbegin, ifsend);
-						
 						ifs.close();
+
+						vector<bool> binput;
+						
 					}
 					else if (j->first == L"define")
 					{
@@ -1255,7 +1261,7 @@ public:
 							throw runtime_error("Unexpected end of file");
 						}
 						i++;
-						int64_t l = parse(input, &i, i, insts, parse_terminal(input, &i, i, insts));
+						int64_t l = parse(input, &i, i, insts, parse_terminal(input, &i, i, insts, false), 0, false);
 						if (insts.inst.find((*k).token) == insts.inst.end() || insts.inst.find((*k).token)->second.itype == instructionType::knownnumber || insts.inst.find((*k).token)->second.itype == instructionType::unknownnumber)
 						{
 							insts.inst.insert_or_assign((*k).token, instruction(0, instructionType::knownnumber, l));
@@ -1263,6 +1269,13 @@ public:
 						else
 						{
 							throw ParserError("keyword cannot be used", *k);
+						}
+					}
+					else if (j->first == L"ldi")	//accepts label as value. format: ldi value
+					{
+						for (size_t k = 0; k < 6 * 4; k++)
+						{
+							output.push_back(false);
 						}
 					}
 				}

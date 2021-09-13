@@ -47,4 +47,4 @@ mtp
 nop
 define test 1+-(2*3)
 define test -0q1000
-define test define define
+define test define
