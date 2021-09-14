@@ -115,6 +115,7 @@ public:
 		inst.insert(make_pair(L"=", instruction(0, instructionType::directive, 0)));	//define
 		inst.insert(make_pair(L"define", instruction(0, instructionType::directive, 0)));
 		inst.insert(make_pair(L"equ", instruction(0, instructionType::directive, 0)));
+		inst.insert(make_pair(L"ldi", instruction(0, instructionType::directive, 0)));
 
 		inst.insert(make_pair(L"+", instruction(0, instructionType::$operator, 11)));	//add, pos(13)
 		inst.insert(make_pair(L"-", instruction(0, instructionType::$operator, 11)));	//sub, neg(13)

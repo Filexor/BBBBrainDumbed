@@ -185,17 +185,30 @@ public:
 	}
 };
 
+enum class $TokenType {
+	Default,
+	Label,
+	ExposedDelimiter,
+	NonexposedDelimiter,
+	LeftParenthesis,
+	RightParenthesis,
+	Operator,
+	QuotedText,
+};
+
 enum class TokenError {
 	OK,
 	UnexpectedEndOfFile,
-	IllegalOperand
+	IllegalOperand,
+	ParenthesisDepthUnderrun,
 };
 
 class Token {
 public:
 	wstring token = L"";
-	wstring filename = L"";
+	$TokenType type = $TokenType::Default;
 	TokenError errorType = TokenError::OK;
+	wstring filename = L"";
 	basic_string<wchar_t>::size_type line = 0;
 	basic_string<wchar_t>::size_type digit = 0;
 };
@@ -216,6 +229,7 @@ public:
 	Memory memory;
 
 	static list<Token>* Tokenizer(wstring input, wstring filename) {
+		size_t parenthesisDepth = 0;
 		list<Token>* output = new list<Token>();
 		basic_string<wchar_t>::size_type i = 0;
 		basic_string<wchar_t>::size_type line = 1;
@@ -227,10 +241,62 @@ public:
 			{
 				break;
 			}
-			if (input[i] == L':' || input[i] == L',' || input[i] == L'(' || input[i] == L')' || input[i] == L'+' || input[i] == L'-' || input[i] == L'*' || input[i] == L'/' || input[i] == L'%' || input[i] == L'~')	//label and operands
+			if (input[i] == L',')
 			{
-				tmp.filename = filename;
 				tmp.token.push_back(input[i]);
+				if (parenthesisDepth != 0)
+				{
+					tmp.type = $TokenType::NonexposedDelimiter;
+				}
+				else
+				{
+					tmp.type = $TokenType::ExposedDelimiter;
+				}
+				tmp.filename = filename;
+				tmp.digit = digit;
+				tmp.line = line;
+				i++;
+				digit++;
+				output->push_back(tmp);
+				continue;
+			}
+			if (input[i] == L'(')
+			{
+				parenthesisDepth++;
+				tmp.token.push_back(input[i]);
+				tmp.type = $TokenType::LeftParenthesis;
+				tmp.filename = filename;
+				tmp.digit = digit;
+				tmp.line = line;
+				i++;
+				digit++;
+				output->push_back(tmp);
+				continue;
+			}
+			if (input[i] == L')')
+			{
+				parenthesisDepth--;
+				tmp.token.push_back(input[i]);
+				tmp.type = $TokenType::RightParenthesis;
+				if (parenthesisDepth < 0)
+				{
+					tmp.errorType = TokenError::ParenthesisDepthUnderrun;
+				}
+				tmp.filename = filename;
+				tmp.digit = digit;
+				tmp.line = line;
+				i++;
+				digit++;
+				output->push_back(tmp);
+				continue;
+			}
+			if (input[i] == L'+' || input[i] == L'-' || input[i] == L'*' || input[i] == L'/' || input[i] == L'%' || input[i] == L'~')	//label and operands
+			{
+				tmp.token.push_back(input[i]);
+				tmp.type = $TokenType::Operator;
+				tmp.filename = filename;
+				tmp.digit = digit;
+				tmp.line = line;
 				i++;
 				digit++;
 				output->push_back(tmp);
@@ -240,9 +306,12 @@ public:
 			{
 				if ((i + 1) < input.length() && (input[i + 1] == L'<' || input[i + 1] == L'='))
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
 					tmp.token.push_back(input[i + 1]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i += 2;
 					digit += 2;
 					output->push_back(tmp);
@@ -250,8 +319,11 @@ public:
 				}
 				else
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i++;
 					digit++;
 					output->push_back(tmp);
@@ -262,10 +334,13 @@ public:
 			{
 				if ((i + 2) < input.length() && input[i + 1] == L'>' && input[i + 2] == L'>')
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
 					tmp.token.push_back(input[i + 1]);
 					tmp.token.push_back(input[i + 2]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i += 3;
 					digit += 3;
 					output->push_back(tmp);
@@ -273,9 +348,12 @@ public:
 				}
 				else if ((i + 1) < input.length() && (input[i + 1] == L'>' || input[i + 1] == L'='))
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
 					tmp.token.push_back(input[i + 1]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i += 2;
 					digit += 2;
 					output->push_back(tmp);
@@ -283,8 +361,11 @@ public:
 				}
 				else
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i++;
 					digit++;
 					output->push_back(tmp);
@@ -295,9 +376,12 @@ public:
 			{
 				if ((i + 1) < input.length() && input[i + 1] == L'|')
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
 					tmp.token.push_back(input[i + 1]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i += 2;
 					digit += 2;
 					output->push_back(tmp);
@@ -305,8 +389,11 @@ public:
 				}
 				else
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i++;
 					digit++;
 					output->push_back(tmp);
@@ -317,9 +404,12 @@ public:
 			{
 				if ((i + 1) < input.length() && input[i + 1] == L'&')
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
 					tmp.token.push_back(input[i + 1]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i += 2;
 					digit += 2;
 					output->push_back(tmp);
@@ -327,8 +417,11 @@ public:
 				}
 				else
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i++;
 					digit++;
 					output->push_back(tmp);
@@ -339,9 +432,12 @@ public:
 			{
 				if ((i + 1) < input.length() && input[i + 1] == L'^')
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
 					tmp.token.push_back(input[i + 1]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i += 2;
 					digit += 2;
 					output->push_back(tmp);
@@ -349,8 +445,11 @@ public:
 				}
 				else
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i++;
 					digit++;
 					output->push_back(tmp);
@@ -361,9 +460,12 @@ public:
 			{
 				if ((i + 1) < input.length() && input[i + 1] == L'=')
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
 					tmp.token.push_back(input[i + 1]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i += 2;
 					digit += 2;
 					output->push_back(tmp);
@@ -371,8 +473,11 @@ public:
 				}
 				else
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i++;
 					digit++;
 					output->push_back(tmp);
@@ -383,9 +488,12 @@ public:
 			{
 				if ((i + 1) < input.length() && input[i + 1] == L'=')
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
 					tmp.token.push_back(input[i + 1]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i += 2;
 					digit += 2;
 					output->push_back(tmp);
@@ -393,8 +501,11 @@ public:
 				}
 				else
 				{
-					tmp.filename = filename;
 					tmp.token.push_back(input[i]);
+					tmp.type = $TokenType::Operator;
+					tmp.filename = filename;
+					tmp.digit = digit;
+					tmp.line = line;
 					i++;
 					digit++;
 					output->push_back(tmp);
@@ -414,6 +525,7 @@ public:
 			}
 			if (input[i] == L'\'')	//single quote
 			{
+				tmp.type = $TokenType::QuotedText;
 				tmp.filename = filename;
 				tmp.line = line;
 				tmp.digit = digit;
@@ -627,6 +739,7 @@ public:
 			}
 			if (input[i] == L'\"')	//double quote
 			{
+				tmp.type = $TokenType::QuotedText;
 				tmp.filename = filename;
 				tmp.line = line;
 				tmp.digit = digit;
@@ -878,6 +991,11 @@ public:
 					tmp.token.push_back(input[i]);
 					i++;
 					digit++;
+					if (input[i] == L':')
+					{
+						tmp.type == $TokenType::Label;
+						break;
+					}
 				}
 				output->push_back(tmp);
 				continue;
@@ -921,6 +1039,10 @@ public:
 			return false;
 		}
 		return true;
+	}
+
+	static bool isParsable(Token input, instructions insts) {
+		return hasNumber(input.token, insts) || input.type == $TokenType::LeftParenthesis || input.type == $TokenType::Operator;
 	}
 
 	static int64_t toNumber(list<Token>::iterator* input, instructions insts, bool allowUnknown) {
@@ -1213,7 +1335,7 @@ public:
 			auto j = insts.inst.find((*i).token);
 			if (j == insts.inst.end())
 			{
-				if ((*i).token.back() == L':')	//label
+				if ((*i).type == $TokenType::Label)	//label
 				{
 					wstring l = (*i).token;
 					l.pop_back();
@@ -1235,7 +1357,7 @@ public:
 				}
 				else if (j->second.itype == instructionType::directive)
 				{
-					if (j->first == L"binclude")	//format: binclude filename [filesize] [fileoffset]
+					if (j->first == L"binclude")	//format: binclude filename [fileoffset] [filesize]
 					{
 						i++;
 						wstring filepath = (*i).token;
@@ -1258,7 +1380,7 @@ public:
 						auto k = ++i;
 						if (i == input->end())
 						{
-							throw runtime_error("Unexpected end of file");
+							throw runtime_error("unexpected end of file");
 						}
 						i++;
 						int64_t l = parse(input, &i, i, insts, parse_terminal(input, &i, i, insts, false), 0, false);
@@ -1273,6 +1395,13 @@ public:
 					}
 					else if (j->first == L"ldi")	//accepts label as value. format: ldi value
 					{
+						TBR.push_back(make_pair(output.size(), i));
+						i++;
+						if (!isParsable(*i, insts))
+						{
+							throw ParserError("parsable token expacted", *i);
+						}
+						parse(input, &i, i, insts, parse_terminal(input, &i, i, insts, true), 0, true);
 						for (size_t k = 0; k < 6 * 4; k++)
 						{
 							output.push_back(false);
@@ -1281,6 +1410,31 @@ public:
 				}
 			}
 			i++;
+		}
+		for (size_t j = 0; j < TBR.size(); j++)
+		{
+			if (TBR[j].second->token == L"ldi")
+			{
+				auto k = TBR[j].second;
+				k++;
+				int64_t l = parse(input, &k, k, insts, parse_terminal(input, &k, k, insts, true), 0, true);
+				if (l < 0 || l > UINT16_MAX)
+				{
+					throw ParserError("value out of range", *(TBR[j].second));
+				}
+				uint8_t m0, m1, m2, m3;
+				m0 = (l) & 0xf | 0x20;
+				m1 = (l >> 4) & 0xf | 0x20;
+				m2 = (l >> 8) & 0xf | 0x20;
+				m3 = (l >> 12) & 0xf | 0x20;
+				for (size_t n = 0; n < 6; n++)
+				{
+					output[TBR[j].first + n] = (m0 >> n) & 1;
+					output[TBR[j].first + n + 6] = (m1 >> n) & 1;
+					output[TBR[j].first + n + 6 * 2] = (m2 >> n) & 1;
+					output[TBR[j].first + n + 6 * 3] = (m3 >> n) & 1;
+				}
+			}
 		}
 		return output;
 	}
