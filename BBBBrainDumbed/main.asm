@@ -1,7 +1,7 @@
 cli
 ld0 ld0 ld0 ld8
 mta
-;loop: 6
+loop: ;6
 
 ;LD16M B[15:0]=(A)[15:0]
 cli clj mfn mty
@@ -41,10 +41,7 @@ mtp
 ;end2: 85
 
 mfd mta
-ld4 ld2 ld0 ld0 ;loop addr
+ldi loop ;loop addr
 mtp
 ;end: 93
 nop
-define test 1+-(2*3)
-define test -0q1000
-define test define

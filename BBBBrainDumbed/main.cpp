@@ -988,14 +988,17 @@ public:
 				tmp.digit = digit;
 				while (i < input.length() && input[i] != L' ' && input[i] != L'\r' && input[i] != L'\n' && input[i] != L'\0' && input[i] != L'\t' && input[i] != L'+' && input[i] != L'-' && input[i] != L'*' && input[i] != L'/' && input[i] != L'%' && input[i] != L'|' && input[i] != L'&' && input[i] != L'^' && input[i] != L'~' && input[i] != L'<' && input[i] != L'>' && input[i] != L'!' && input[i] != L'=' && input[i] != L',' && input[i] != L'(' && input[i] != L')')	//not separator nor operand
 				{
+					if (input[i] == L':')
+					{
+						tmp.type = $TokenType::Label;
+						tmp.token.push_back(input[i]);
+						i++;
+						digit++;
+						break;
+					}
 					tmp.token.push_back(input[i]);
 					i++;
 					digit++;
-					if (input[i] == L':')
-					{
-						tmp.type == $TokenType::Label;
-						break;
-					}
 				}
 				output->push_back(tmp);
 				continue;
@@ -1343,7 +1346,7 @@ public:
 				}
 				else	//identifier
 				{
-					throw runtime_error("identifier must be come with mnemonic or directive");
+					throw ParserError("identifier must be come with mnemonic or directive", *i);
 				}
 			}
 			else
@@ -2003,7 +2006,7 @@ int wmain(int argc, wchar_t* argv[], wchar_t* envp[]) {
 	}
 	catch (const ParserError& e)
 	{
-		wcout << L"Parser error at file:" << e.token.filename << L" line:" << e.token.line << L" digit:" << e.token.digit << endl << e.what() << endl;
+		wcout << L"Parser error at token:" << e.token.token << L" filename:" << e.token.filename << L" line:" << e.token.line << L" digit:" << e.token.digit << endl << e.what() << endl;
 		return 3;
 	}
 	catch (const runtime_error& e)
